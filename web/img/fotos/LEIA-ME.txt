@@ -1,0 +1,2 @@
+Fotos reais dos peixes (uma por espécie), com o nome indicado no campo "foto" de especies.json.
+Para baixar do Wikimedia Commons: python3 ferramentas/baixar_fotos.py (na pasta do projeto, com internet).

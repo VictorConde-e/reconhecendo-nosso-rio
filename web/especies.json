@@ -1,0 +1,589 @@
+{
+  "_leia_me": [
+    "Tabela UID -> espécie do jogo 'Monte a comunidade de peixes'.",
+    "uid: texto do leitor (ex.: '04A1B2C3D4E5F6') ou lista de UIDs se houver mais de um peixe impresso da mesma espécie. 'SIM-xx' são placeholders do modo simulação; pode manter os dois numa lista: [\"SIM-01\", \"04A1...\"].",
+    "guilda_trofica: piscivoro | onivoro | insetivoro | detritivoro | herbivoro (as regras estão em regras.js).",
+    "habitat: lista com corrente | remanso | lago.",
+    "status_ameaca: LC, NT, VU, EN, CR, DD ou NE (não avaliada). Usar a categoria da lista que o projeto adotar (ICMBio/MMA 2022, lista estadual do RJ ou IUCN) e anotar a fonte em notas_validacao.",
+    "porte: pequeno | medio | grande. Usado na teia alimentar: um piscívoro só come peixes de porte menor que o dele.",
+    "come: opcional. Substitui a dieta padrão da guilda. Itens: algas, detritos, insetos, frutos, peixes.",
+    "validar: true = dado biológico que ainda precisa da revisão do biólogo. notas_validacao diz o que conferir.",
+    "visual: só aparência no jogo (cor, forma, coluna d'água). Não é dado biológico.",
+    "por_que_tenta: só para exóticas 'tentadoras'; aparece na mensagem quando o peixe entra.",
+    "ambientes: onde a espécie vive bem (cabeceira | planicie | brejo | represa), usado no modo Desafio. Ver ambientes.js.",
+    "sofre_com: eventos do Desafio que esta espécie não aguenta (desmatamento | esgoto | seca). Ver ambientes.js.",
+    "foto: foto real mostrada embaixo da descrição. Rode ferramentas/baixar_fotos.py para buscar no Wikimedia Commons, ou coloque uma foto própria com esse nome e preencha foto_credito e foto_licenca.",
+    "foto_busca: termo usado pelo script para achar a foto. Para escolher um arquivo exato, crie foto_arquivo com o nome do arquivo no Commons (ex.: 'File:Hoplias malabaricus.jpg')."
+  ],
+  "especies": [
+    {
+      "uid": "SIM-01",
+      "nome_popular": "Lambari",
+      "nome_cientifico": "Astyanax spp.",
+      "guilda_trofica": "onivoro",
+      "dieta": "Insetos, sementes, frutos e restos de plantas que caem da mata",
+      "habitat": [
+        "corrente",
+        "remanso"
+      ],
+      "ambientes": [
+        "cabeceira",
+        "planicie",
+        "brejo",
+        "represa"
+      ],
+      "sofre_com": [],
+      "migrador": false,
+      "status_ameaca": "NE",
+      "nativo": true,
+      "endemico": false,
+      "porte": "pequeno",
+      "come": [
+        "insetos",
+        "frutos",
+        "algas"
+      ],
+      "descricao_curta": "Pequeno, prateado e muito ágil. Anda em cardumes e espalha sementes da mata ciliar.",
+      "imagem": "img/lambari.png",
+      "foto": "img/fotos/lambari.jpg",
+      "foto_busca": "Astyanax",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Definir a(s) espécie(s) de lambari da bacia do Guapiaçu (Astyanax / Psalidodon, a taxonomia mudou bastante). O status só faz sentido no nível de espécie. Campos 'ambientes' e 'sofre_com' preenchidos a partir do habitat: revisar.",
+      "visual": {
+        "cor": "#c9d6df",
+        "detalhe": "#f2b134",
+        "forma": "fusiforme",
+        "coluna": "meio"
+      }
+    },
+    {
+      "uid": "SIM-02",
+      "nome_popular": "Traíra",
+      "nome_cientifico": "Hoplias malabaricus",
+      "guilda_trofica": "piscivoro",
+      "dieta": "Outros peixes, rãs e camarões. Caça de tocaia",
+      "habitat": [
+        "remanso",
+        "lago"
+      ],
+      "ambientes": [
+        "planicie",
+        "brejo",
+        "represa"
+      ],
+      "sofre_com": [],
+      "migrador": false,
+      "status_ameaca": "LC",
+      "nativo": true,
+      "endemico": false,
+      "porte": "grande",
+      "descricao_curta": "Predadora de emboscada: fica parada entre as plantas e dá o bote. Ajuda a controlar as populações de peixes pequenos.",
+      "imagem": "img/traira.png",
+      "foto": "img/fotos/traira.jpg",
+      "foto_busca": "Hoplias malabaricus",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "H. malabaricus é um complexo de espécies; ver qual linhagem/nome usar para a Baía de Guanabara. Conferir a categoria de ameaça adotada. Campos 'ambientes' e 'sofre_com' preenchidos a partir do habitat: revisar.",
+      "visual": {
+        "cor": "#6b5a3a",
+        "detalhe": "#3b3020",
+        "forma": "alongado",
+        "coluna": "meio"
+      }
+    },
+    {
+      "uid": "SIM-03",
+      "nome_popular": "Cascudo",
+      "nome_cientifico": "Hypostomus sp.",
+      "guilda_trofica": "detritivoro",
+      "dieta": "Raspa algas e lodo das pedras com a boca em ventosa",
+      "habitat": [
+        "corrente"
+      ],
+      "ambientes": [
+        "cabeceira",
+        "planicie"
+      ],
+      "sofre_com": [
+        "desmatamento",
+        "seca"
+      ],
+      "migrador": false,
+      "status_ameaca": "NE",
+      "nativo": true,
+      "endemico": false,
+      "porte": "medio",
+      "descricao_curta": "Vive grudado nas pedras do fundo. Tem uma 'armadura' de placas e limpa o rio raspando algas e lodo.",
+      "imagem": "img/cascudo.png",
+      "foto": "img/fotos/cascudo.jpg",
+      "foto_busca": "Hypostomus",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Confirmar a espécie de Hypostomus (ou outro loricariídeo, ex. Pareiorhaphis, Neoplecostomus) na área. O habitat pode incluir remanso. Campos 'ambientes' e 'sofre_com' preenchidos a partir do habitat: revisar.",
+      "visual": {
+        "cor": "#5a4e3c",
+        "detalhe": "#2e2820",
+        "forma": "achatado",
+        "coluna": "fundo"
+      }
+    },
+    {
+      "uid": "SIM-04",
+      "nome_popular": "Acará",
+      "nome_cientifico": "Geophagus brasiliensis",
+      "guilda_trofica": "onivoro",
+      "dieta": "Revira a areia do fundo atrás de larvas, sementes e pequenos animais",
+      "habitat": [
+        "remanso",
+        "lago"
+      ],
+      "ambientes": [
+        "planicie",
+        "brejo",
+        "represa"
+      ],
+      "sofre_com": [],
+      "migrador": false,
+      "status_ameaca": "LC",
+      "nativo": true,
+      "endemico": false,
+      "porte": "medio",
+      "come": [
+        "insetos",
+        "detritos",
+        "frutos"
+      ],
+      "descricao_curta": "Peixe nativo de corpo alto, com pintas azuis brilhantes. Os pais cuidam dos ovos e dos filhotes.",
+      "imagem": "img/acara.png",
+      "foto": "img/fotos/acara.jpg",
+      "foto_busca": "Geophagus brasiliensis",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Campos 'ambientes' e 'sofre_com' preenchidos a partir do habitat: revisar.",
+      "visual": {
+        "cor": "#7a8a5a",
+        "detalhe": "#4fc3f7",
+        "forma": "alto",
+        "coluna": "meio"
+      }
+    },
+    {
+      "uid": "SIM-05",
+      "nome_popular": "Piaba-azul",
+      "nome_cientifico": "Mimagoniates microlepis",
+      "guilda_trofica": "insetivoro",
+      "dieta": "Insetos que caem na superfície da água",
+      "habitat": [
+        "corrente"
+      ],
+      "ambientes": [
+        "cabeceira",
+        "planicie"
+      ],
+      "sofre_com": [
+        "desmatamento",
+        "esgoto",
+        "seca"
+      ],
+      "migrador": false,
+      "status_ameaca": "NE",
+      "nativo": true,
+      "endemico": false,
+      "porte": "pequeno",
+      "descricao_curta": "Peixinho de riacho de Mata Atlântica, com reflexos azulados. Precisa de água limpa e de mata na beira do rio.",
+      "imagem": "img/piaba-azul.png",
+      "foto": "img/fotos/piaba-azul.jpg",
+      "foto_busca": "Mimagoniates microlepis",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Confirmar a ocorrência na bacia do Guapiaçu e o nome popular usado na região. Ver se endemico = true (Mata Atlântica) e a categoria de ameaça. Campos 'ambientes' e 'sofre_com' preenchidos a partir do habitat: revisar.",
+      "visual": {
+        "cor": "#5aa9e6",
+        "detalhe": "#1d4e89",
+        "forma": "fusiforme",
+        "coluna": "superficie"
+      }
+    },
+    {
+      "uid": "SIM-07",
+      "nome_popular": "Cambeva",
+      "nome_cientifico": "Trichomycterus spp.",
+      "guilda_trofica": "insetivoro",
+      "dieta": "Larvas de insetos escondidas entre as pedras",
+      "habitat": [
+        "corrente"
+      ],
+      "ambientes": [
+        "cabeceira"
+      ],
+      "sofre_com": [
+        "desmatamento",
+        "esgoto",
+        "seca"
+      ],
+      "migrador": false,
+      "status_ameaca": "NE",
+      "nativo": true,
+      "endemico": true,
+      "porte": "pequeno",
+      "descricao_curta": "Peixinho comprido e escorregadio que vive entre as pedras das corredeiras. Só aparece em água limpa e oxigenada.",
+      "imagem": "img/cambeva.png",
+      "foto": "img/fotos/cambeva.jpg",
+      "foto_busca": "Trichomycterus",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Definir a espécie de Trichomycterus da bacia. Muitas são de distribuição restrita: confirmar se endemico = true e a categoria de ameaça. Campos 'ambientes' e 'sofre_com' preenchidos a partir do habitat: revisar.",
+      "visual": {
+        "cor": "#a68a5b",
+        "detalhe": "#5b4a2f",
+        "forma": "enguia",
+        "coluna": "fundo"
+      }
+    },
+    {
+      "uid": "SIM-08",
+      "nome_popular": "Peixe-das-nuvens",
+      "nome_cientifico": "Notholebias minimus",
+      "guilda_trofica": "insetivoro",
+      "dieta": "Larvas de mosquito e pequenos crustáceos",
+      "habitat": [
+        "remanso"
+      ],
+      "ambientes": [
+        "brejo"
+      ],
+      "sofre_com": [
+        "desmatamento",
+        "esgoto"
+      ],
+      "migrador": false,
+      "status_ameaca": "EN",
+      "nativo": true,
+      "endemico": true,
+      "porte": "pequeno",
+      "descricao_curta": "Peixe anual: vive em poças de brejo que secam. Os ovos esperam no barro até a próxima chuva, por isso parece que ele 'cai das nuvens'.",
+      "imagem": "img/peixe-das-nuvens.png",
+      "foto": "img/fotos/peixe-das-nuvens.jpg",
+      "foto_busca": "Notholebias minimus",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Conferir se ocorre na planície do Guapiaçu/Macacu e qual a categoria atual (lista nacional/estadual). O habitat real são poças temporárias e brejos: hoje está como 'remanso' porque o jogo só tem corrente/remanso/lago. Campos 'ambientes' e 'sofre_com' preenchidos a partir do habitat: revisar.",
+      "visual": {
+        "cor": "#d9534f",
+        "detalhe": "#2a9df4",
+        "forma": "fusiforme",
+        "coluna": "superficie"
+      }
+    },
+    {
+      "uid": "SIM-09",
+      "nome_popular": "Peixe-flor",
+      "nome_cientifico": "Awaous tajasica",
+      "guilda_trofica": "onivoro",
+      "dieta": "Filtra a areia do fundo atrás de algas e pequenos animais",
+      "habitat": [
+        "corrente"
+      ],
+      "ambientes": [
+        "cabeceira",
+        "planicie"
+      ],
+      "sofre_com": [
+        "desmatamento",
+        "esgoto",
+        "seca"
+      ],
+      "migrador": true,
+      "status_ameaca": "NE",
+      "nativo": true,
+      "endemico": false,
+      "porte": "medio",
+      "come": [
+        "algas",
+        "insetos",
+        "detritos"
+      ],
+      "descricao_curta": "Migrador: as larvas descem até o mar e os jovens sobem o rio de volta. Precisa de um rio sem barreiras do mar até a serra.",
+      "imagem": "img/peixe-flor.png",
+      "foto": "img/fotos/peixe-flor.jpg",
+      "foto_busca": "Awaous tajasica",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Confirmar a ocorrência no Guapiaçu, o nome popular local e a categoria de ameaça. A anfidromia está bem descrita para a espécie, mas vale conferir a fonte. Campos 'ambientes' e 'sofre_com' preenchidos a partir do habitat: revisar.",
+      "visual": {
+        "cor": "#b8a37a",
+        "detalhe": "#6d5a3a",
+        "forma": "gobio",
+        "coluna": "fundo"
+      }
+    },
+    {
+      "uid": "SIM-13",
+      "nome_popular": "Saicanga",
+      "nome_cientifico": "Oligosarcus hepsetus",
+      "guilda_trofica": "piscivoro",
+      "dieta": "Caça peixinhos e insetos na correnteza",
+      "habitat": [
+        "corrente",
+        "remanso"
+      ],
+      "ambientes": [
+        "cabeceira",
+        "planicie"
+      ],
+      "sofre_com": [
+        "desmatamento",
+        "esgoto"
+      ],
+      "migrador": false,
+      "status_ameaca": "NE",
+      "nativo": true,
+      "endemico": false,
+      "porte": "medio",
+      "come": [
+        "peixes",
+        "insetos"
+      ],
+      "descricao_curta": "Também chamada de bocarra: tem a boca grande cheia de dentes. É um predador ágil dos riachos de Mata Atlântica.",
+      "imagem": "img/saicanga.png",
+      "foto": "img/fotos/saicanga.jpg",
+      "foto_busca": "Oligosarcus hepsetus",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Confirmar a ocorrência de Oligosarcus hepsetus na bacia do Guapiaçu/Macacu, o nome popular local e a categoria de ameaça. Ver se é razoável colocá-la na cabeceira.",
+      "visual": {
+        "cor": "#b9b49a",
+        "detalhe": "#e0802f",
+        "forma": "fusiforme",
+        "coluna": "meio"
+      }
+    },
+    {
+      "uid": "SIM-14",
+      "nome_popular": "Jacundá",
+      "nome_cientifico": "Crenicichla lacustris",
+      "guilda_trofica": "piscivoro",
+      "dieta": "Persegue peixes pequenos e camarões entre as pedras e a vegetação",
+      "habitat": [
+        "corrente",
+        "remanso"
+      ],
+      "ambientes": [
+        "planicie",
+        "represa"
+      ],
+      "sofre_com": [
+        "esgoto"
+      ],
+      "migrador": false,
+      "status_ameaca": "NE",
+      "nativo": true,
+      "endemico": false,
+      "porte": "medio",
+      "come": [
+        "peixes",
+        "insetos"
+      ],
+      "descricao_curta": "Ciclídeo comprido com uma mancha escura no rabo. Fica escondido e dá o bote nos peixinhos que passam.",
+      "imagem": "img/jacunda.png",
+      "foto": "img/fotos/jacunda.jpg",
+      "foto_busca": "Crenicichla lacustris",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Confirmar a ocorrência de Crenicichla lacustris na bacia, se tolera represa e a categoria de ameaça.",
+      "visual": {
+        "cor": "#8f8a5c",
+        "detalhe": "#2e2a1c",
+        "forma": "alongado",
+        "coluna": "meio"
+      }
+    },
+    {
+      "uid": "SIM-15",
+      "nome_popular": "Muçum",
+      "nome_cientifico": "Synbranchus marmoratus",
+      "guilda_trofica": "piscivoro",
+      "dieta": "Come peixes pequenos, minhocas e camarões no fundo lamacento",
+      "habitat": [
+        "remanso"
+      ],
+      "ambientes": [
+        "brejo",
+        "planicie"
+      ],
+      "sofre_com": [],
+      "migrador": false,
+      "status_ameaca": "NE",
+      "nativo": true,
+      "endemico": false,
+      "porte": "grande",
+      "come": [
+        "peixes",
+        "insetos",
+        "detritos"
+      ],
+      "descricao_curta": "Parece uma cobra, mas é peixe! Respira ar e, na seca, se enterra no barro até a água voltar.",
+      "imagem": "img/mucum.png",
+      "foto": "img/fotos/mucum.jpg",
+      "foto_busca": "Synbranchus marmoratus",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Confirmar se entra como piscívoro (é carnívoro generalista). Conferir ocorrência e categoria de ameaça.",
+      "visual": {
+        "cor": "#6e5a3a",
+        "detalhe": "#3b2e1c",
+        "forma": "enguia",
+        "coluna": "fundo"
+      }
+    },
+    {
+      "uid": "SIM-10",
+      "nome_popular": "Tilápia",
+      "nome_cientifico": "Coptodon rendalli / Oreochromis niloticus",
+      "guilda_trofica": "herbivoro",
+      "dieta": "Algas e plantas aquáticas, mas aceita quase qualquer alimento",
+      "habitat": [
+        "remanso",
+        "lago"
+      ],
+      "ambientes": [
+        "planicie",
+        "brejo",
+        "represa"
+      ],
+      "sofre_com": [],
+      "migrador": false,
+      "status_ameaca": "NE",
+      "nativo": false,
+      "endemico": false,
+      "tentador": true,
+      "porte": "medio",
+      "come": [
+        "algas",
+        "detritos",
+        "frutos"
+      ],
+      "descricao_curta": "Peixe africano, trazido para criação e pesca. Cresce rápido e se reproduz muito, mas compete por espaço e comida com os peixes nativos.",
+      "imagem": "img/tilapia.png",
+      "foto": "img/fotos/tilapia.jpg",
+      "foto_busca": "Coptodon rendalli",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Escolher qual tilápia representar (C. rendalli e/ou O. niloticus) conforme os registros na bacia. Campos 'ambientes' e 'sofre_com' preenchidos a partir do habitat: revisar.",
+      "visual": {
+        "cor": "#7d8b8f",
+        "detalhe": "#c0504d",
+        "forma": "alto",
+        "coluna": "meio"
+      },
+      "por_que_tenta": "cresce rápido e é fácil de criar"
+    },
+    {
+      "uid": "SIM-11",
+      "nome_popular": "Tucunaré",
+      "nome_cientifico": "Cichla spp.",
+      "guilda_trofica": "piscivoro",
+      "dieta": "Caça outros peixes durante o dia, inclusive os nativos pequenos",
+      "habitat": [
+        "lago",
+        "remanso"
+      ],
+      "ambientes": [
+        "represa",
+        "planicie"
+      ],
+      "sofre_com": [],
+      "migrador": false,
+      "status_ameaca": "NE",
+      "nativo": false,
+      "endemico": false,
+      "tentador": true,
+      "por_que_tenta": "é um peixe famoso na pesca esportiva",
+      "porte": "grande",
+      "descricao_curta": "Peixe da Amazônia solto em represas e lagos do Sudeste para a pesca esportiva. É um predador voraz e pode acabar com os peixinhos nativos.",
+      "imagem": "img/tucunare.png",
+      "foto": "img/fotos/tucunare.jpg",
+      "foto_busca": "Cichla",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Confirmar se há registro de Cichla (C. kelberi, C. piquiti...) na bacia do Guapiaçu/Macacu ou em represas próximas. Senão, apresentar como exemplo de risco. Campos 'ambientes' e 'sofre_com' preenchidos a partir do habitat: revisar.",
+      "visual": {
+        "cor": "#c9b037",
+        "detalhe": "#2b2b2b",
+        "forma": "fusiforme",
+        "coluna": "meio"
+      }
+    },
+    {
+      "uid": "SIM-12",
+      "nome_popular": "Bagre-africano",
+      "nome_cientifico": "Clarias gariepinus",
+      "guilda_trofica": "piscivoro",
+      "dieta": "Come quase tudo: peixes, rãs, insetos e restos",
+      "habitat": [
+        "remanso",
+        "lago"
+      ],
+      "ambientes": [
+        "planicie",
+        "brejo",
+        "represa"
+      ],
+      "sofre_com": [],
+      "migrador": false,
+      "status_ameaca": "NE",
+      "nativo": false,
+      "endemico": false,
+      "tentador": true,
+      "por_que_tenta": "cresce muito e aguenta até água poluída",
+      "porte": "grande",
+      "come": [
+        "peixes",
+        "insetos",
+        "detritos"
+      ],
+      "descricao_curta": "Veio da África para a piscicultura e escapou para os rios. Respira ar, anda pelo barro entre poças e come os peixes nativos.",
+      "imagem": "img/bagre-africano.png",
+      "foto": "img/fotos/bagre-africano.jpg",
+      "foto_busca": "Clarias gariepinus",
+      "foto_credito": "",
+      "foto_licenca": "",
+      "foto_fonte": "",
+      "validar": true,
+      "notas_validacao": "Confirmar registros na bacia (há registros de C. gariepinus no estado do RJ). Ver se a guilda fica como piscívoro ou onívoro nas regras. Campos 'ambientes' e 'sofre_com' preenchidos a partir do habitat: revisar.",
+      "visual": {
+        "cor": "#4f4c48",
+        "detalhe": "#262422",
+        "forma": "bagre",
+        "coluna": "fundo"
+      }
+    }
+  ]
+}

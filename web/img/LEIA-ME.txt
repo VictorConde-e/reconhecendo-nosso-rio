@@ -1,0 +1,7 @@
+Coloque aqui as imagens dos peixes (PNG com fundo transparente),
+com os nomes usados no campo "imagem" de especies.json:
+
+lambari.png, traira.png, cascudo.png, acara.png, piaba-azul.png,
+jundia.png, cambeva.png, peixe-das-nuvens.png, peixe-flor.png, tilapia.png
+
+Sem imagem, a ficha desenha o peixe automaticamente.

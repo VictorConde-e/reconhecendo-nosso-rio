@@ -1,0 +1,1906 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monte a comunidade de peixes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fundo: #ffffff;
+    --painel: #f4f8f9;
+    --painel-borda: #d8e5e9;
+    --texto: #12313a;
+    --texto-suave: #5b7c85;
+    --destaque: #0e8f84;
+    --destaque-claro: #e1f4f1;
+    --aviso: #f4b400;
+    --erro: #d64545;
+    --ok: #2e9e4f;
+    --raio: 18px;
+    --fonte-titulo: "Baloo 2", "Nunito", system-ui, sans-serif;
+    --fonte: "Nunito", system-ui, "Segoe UI", Roboto, sans-serif;
+    font-size: clamp(14px, 1.05vw, 22px);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--fundo);
+    color: var(--texto);
+    font-family: var(--fonte);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  button { font: inherit; cursor: pointer; }
+
+  /* ---------- Cabeçalho ---------- */
+  header {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .5rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid var(--painel-borda);
+    flex-wrap: wrap;
+  }
+  .marca { display: flex; flex-direction: column; line-height: 1.05; margin-right: auto; }
+  .marca small { color: var(--destaque); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: .75rem; }
+  .marca h1 { margin: 0; font-family: var(--fonte-titulo); font-size: 1.75rem; font-weight: 800; white-space: nowrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .35rem .9rem; border-radius: 999px;
+    background: var(--painel); border: 1px solid var(--painel-borda);
+    font-weight: 800; font-size: .95rem; white-space: nowrap;
+  }
+  .chip .ponto { width: .8rem; height: .8rem; border-radius: 50%; background: #b8c6ca; flex: none; }
+  .chip.vez { font-size: 1.15rem; }
+  .btn {
+    border: 0; border-radius: 12px; padding: .5rem .9rem;
+    background: var(--destaque); color: #fff; font-weight: 800; font-size: .95rem; white-space: nowrap;
+    box-shadow: 0 3px 0 rgba(0,0,0,.15);
+  }
+  .btn:active { transform: translateY(2px); box-shadow: none; }
+  .btn.sec { background: var(--painel); color: var(--texto); border: 1px solid var(--painel-borda); }
+  .btn.sec[aria-pressed="true"] { background: var(--aviso); border-color: var(--aviso); color: #3a2a00; }
+  select.btn { appearance: none; padding-right: 1.1rem; }
+  #status-leitor[data-estado="conectado"] .ponto { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  #status-leitor[data-estado="conectando"] .ponto { background: var(--aviso); }
+  #status-leitor[data-estado="erro"] .ponto { background: var(--erro); }
+
+  /* ---------- Palco ---------- */
+  main {
+    flex: 1; min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(320px, 27vw, 560px);
+    grid-template-rows: minmax(0, 62fr) minmax(0, 38fr);
+    gap: .9rem; padding: .9rem;
+  }
+  .caixa {
+    background: var(--painel); border: 1px solid var(--painel-borda);
+    border-radius: var(--raio); position: relative; overflow: hidden; min-height: 0;
+  }
+  .caixa > h2 {
+    margin: 0; position: absolute; top: .6rem; left: 1rem; z-index: 2;
+    font-family: var(--fonte-titulo); font-size: 1.3rem; font-weight: 700;
+    color: var(--texto); pointer-events: none;
+    background: rgba(255, 255, 255, .9); padding: .05rem .8rem; border-radius: 999px;
+  }
+  #caixa-rio { grid-column: 1; grid-row: 1; }
+  #caixa-rio canvas { width: 100%; height: 100%; display: block; }
+  #caixa-teia { grid-column: 1; grid-row: 2; background: #fff; }
+  #caixa-teia > h2 { padding-left: 0; }
+  #caixa-teia svg { width: 100%; height: 100%; display: block; }
+  aside { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: .9rem; min-height: 0; }
+
+  /* ---------- Saúde ---------- */
+  #caixa-ficha h2 { position: static; background: none; padding: 0; color: var(--texto-suave); }
+  #saude-compacta {
+    position: absolute; top: .6rem; right: 1rem; z-index: 3; width: min(42%, 25rem);
+    background: rgba(255, 255, 255, .93); border-radius: 14px; padding: .4rem .9rem 1.15rem;
+    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  }
+  .saude-topo { display: flex; align-items: center; gap: .6rem; }
+  .saude-titulo { font-family: var(--fonte-titulo); font-weight: 700; font-size: 1.1rem; color: var(--texto-suave); }
+  #saude-rotulo { font-weight: 800; font-size: 1rem; margin-left: auto; }
+  #saude-valor { font-family: var(--fonte-titulo); font-size: 2.3rem; font-weight: 800; line-height: 1; transition: color .6s; min-width: 2.2ch; text-align: right; }
+  .barra {
+    position: relative; height: 1.15rem; border-radius: 999px; margin: .25rem 0 0;
+    background: linear-gradient(90deg, #e63946 0%, #f77f00 30%, #fcbf49 55%, #8ac926 80%, #2a9d8f 100%);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,.2);
+  }
+  #barra-vazio {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 100%;
+    background: #e3ecef; border-radius: 0 999px 999px 0;
+    transition: width 1.2s cubic-bezier(.2,.9,.3,1.2);
+  }
+  #barra-meta { position: absolute; top: -.25rem; bottom: -.25rem; width: 3px; background: var(--texto); border-radius: 2px; }
+  #barra-meta span {
+    position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    font-size: .72rem; font-weight: 800; color: var(--texto); white-space: nowrap; margin-top: 0;
+  }
+  /* resumo no cartão final */
+  .resumo-final { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 1.4rem; text-align: left; margin: .8rem 0 .4rem; }
+  .resumo-final h3 { margin: 0 0 .4rem; font-size: 1.05rem; color: var(--texto-suave); }
+  .componentes-final { display: grid; grid-template-columns: auto 1fr auto; gap: .4rem .7rem; align-items: center; font-size: 1rem; font-weight: 700; }
+  .componentes-final .mini { height: .6rem; border-radius: 999px; background: #e3ecef; overflow: hidden; }
+  .componentes-final .mini i { display: block; height: 100%; background: var(--destaque); border-radius: inherit; }
+  .componentes-final b { font-family: var(--fonte-titulo); min-width: 2.2ch; text-align: right; }
+  .peixes-final { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; font-weight: 700; }
+  .peixes-final li { padding: .25rem .7rem; border-radius: 10px; background: var(--destaque-claro); }
+  .peixes-final li.ruim { background: #fde8e8; color: #8e2b2b; }
+  .peixes-final small { font-weight: 600; opacity: .85; }
+
+  /* ---------- Ficha ---------- */
+  #caixa-ficha { flex: 1; padding: .8rem 1.2rem; display: flex; flex-direction: column; overflow-y: auto; background: #fff; }
+  .ficha-vazia { margin: auto; text-align: center; color: var(--texto-suave); font-size: 1.3rem; font-weight: 700; }
+  .ficha-vazia .grande { font-family: var(--fonte-titulo); font-size: 2.2rem; color: var(--texto); line-height: 1.1; margin-bottom: .4rem; }
+  .ficha { animation: entra .6s cubic-bezier(.2,.9,.3,1.2); }
+  @keyframes entra { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+  .ficha-img { display: flex; justify-content: center; align-items: center; height: 7.5rem; margin: .2rem 0 .4rem; }
+  .ficha-img img, .ficha-img canvas { max-height: 100%; max-width: 100%; }
+  .ficha-nome { font-family: var(--fonte-titulo); font-size: 2.3rem; font-weight: 800; line-height: 1; margin: 0; }
+  .ficha-cientifico { font-style: italic; color: var(--texto-suave); font-size: 1.15rem; margin: .15rem 0 .6rem; }
+  .selos { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .7rem; }
+  .selo { padding: .2rem .7rem; border-radius: 999px; font-weight: 800; font-size: .95rem; background: #e3ecef; color: #fff; }
+  .selo.nativo { background: #1f7a4d; }
+  .selo.exotico { background: #b23a48; }
+  .selo.endemico { background: #6a4c93; }
+  .selo.migrador { background: #1d6fa5; }
+  .selo.ameaca-NE, .selo.ameaca-DD { background: #e3ecef; color: var(--texto); }
+  .selo.ameaca-LC { background: #2a6f5f; } .selo.ameaca-NT { background: #8a7a1f; }
+  .selo.ameaca-VU { background: #b5651d; } .selo.ameaca-EN { background: #c0392b; } .selo.ameaca-CR { background: #8e1b1b; }
+  .ficha dl { display: grid; grid-template-columns: auto 1fr; gap: .25rem .8rem; margin: 0 0 .6rem; font-size: 1.02rem; }
+  .ficha dt { color: var(--texto-suave); font-weight: 800; }
+  .ficha dd { margin: 0; }
+  .ficha .descricao { font-size: 1.05rem; line-height: 1.3; margin: 0 0 .5rem; }
+  #caixa-ficha:has(.ficha) > h2 { display: none; }
+  .ficha .msg-entrada { margin-bottom: .6rem; padding: .5rem .8rem; border-radius: 12px; background: var(--destaque-claro); border-left: 5px solid var(--destaque); font-weight: 800; font-size: 1.1rem; }
+  .ficha .msg-entrada.ruim { background: #fde8e8; border-color: var(--erro); }
+  .foto-real { margin: .2rem 0 .6rem; }
+  .foto-real img { display: block; width: 100%; max-height: 15rem; object-fit: cover; border-radius: 14px; background: var(--painel); }
+  .foto-real figcaption { font-size: .8rem; color: var(--texto-suave); margin-top: .25rem; }
+  .foto-faltando { display: none; font-size: .85rem; color: #6b5200; background: #fff4cc; border-radius: 10px; padding: .4rem .7rem; }
+  body.modo-revisao .foto-faltando { display: block; }
+  .revisao { display: none; margin-top: .6rem; padding: .5rem .7rem; border-radius: 10px; background: #fff4cc; color: #6b5200; font-size: .9rem; }
+  body.modo-revisao .revisao { display: block; }
+
+  /* ---------- Dicas (placa no rio) ---------- */
+  #placa-dicas {
+    position: absolute; left: 1rem; bottom: 1rem; z-index: 3; max-width: min(62%, 44rem);
+    background: rgba(255, 255, 255, .93); border-radius: 14px;
+    padding: .55rem 1rem .65rem; box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  }
+  #placa-dicas h3 { margin: 0 0 .2rem; font-size: 1rem; color: #a06f00; }
+  #dicas { margin: 0; padding-left: 1.2rem; font-size: 1.1rem; font-weight: 700; line-height: 1.3; }
+
+  /* ---------- Avisos (toast) ---------- */
+  #avisos { position: absolute; top: 6.5rem; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; flex-direction: column; gap: .5rem; align-items: center; pointer-events: none; width: 90%; }
+  .aviso {
+    background: #ffd25e; color: #3a2a00; font-weight: 800; font-size: 1.5rem;
+    padding: .7rem 1.4rem; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    animation: aviso-in .35s ease-out; text-align: center;
+  }
+  .aviso.erro { background: var(--erro); color: #fff; }
+  .aviso.info { background: var(--destaque); color: #fff; }
+  .aviso.saindo { opacity: 0; transform: translateY(-10px); transition: .4s; }
+  @keyframes aviso-in { from { opacity: 0; transform: translateY(-16px) scale(.95); } }
+
+  /* ---------- Faixa de celebração / fim de rodada ---------- */
+  #sobreposicao {
+    position: fixed; inset: 0; z-index: 20; display: none;
+    background: rgba(255, 255, 255, .7); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  #sobreposicao.aberta { display: flex; }
+  .cartao-final {
+    background: #fff; border: 1px solid var(--painel-borda); border-radius: 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.18);
+    padding: 1.8rem 2.4rem; text-align: center; max-width: 60rem; max-height: 92vh; overflow-y: auto; animation: entra .5s;
+  }
+  .cartao-final h2 { font-family: var(--fonte-titulo); font-size: 3rem; margin: 0 0 .3rem; line-height: 1.05; }
+  .cartao-final .num { font-family: var(--fonte-titulo); font-size: 5rem; font-weight: 800; line-height: 1; }
+  .cartao-final p { font-size: 1.3rem; }
+  .cartao-final .btn { font-size: 1.4rem; padding: .8rem 2rem; margin-top: .8rem; }
+
+  #faixa-meta {
+    position: absolute; left: 50%; top: 38%; transform: translateX(-50%) scale(.6);
+    background: var(--ok); color: #fff; font-family: var(--fonte-titulo); font-weight: 800;
+    font-size: 2.2rem; padding: .4rem 1.6rem; border-radius: 999px; opacity: 0; z-index: 4;
+    transition: .5s cubic-bezier(.2,.9,.3,1.4); pointer-events: none; white-space: nowrap;
+  }
+  #faixa-meta.visivel { opacity: 1; transform: translateX(-50%) scale(1); }
+
+  /* ---------- Painel de simulação ---------- */
+  #simulacao {
+    display: none; padding: .6rem 1rem .8rem; background: #fff8e1;
+    border-top: 2px dashed var(--aviso);
+  }
+  body.modo-simulacao #simulacao { display: block; }
+  #simulacao .linha { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+  #simulacao .titulo { font-weight: 800; color: #a06f00; margin-right: .4rem; }
+  #simulacao button.peixe { background: #fff; color: var(--texto); border: 1px solid #ead9a6; border-radius: 10px; padding: .35rem .7rem; font-weight: 700; }
+  #simulacao button.peixe.exotica { border-color: #e9b4b4; }
+  #simulacao button.peixe kbd { background: var(--aviso); color: #3a2a00; border-radius: 5px; padding: 0 .35rem; margin-right: .3rem; font-family: inherit; font-weight: 800; }
+  #simulacao button.peixe.usado { opacity: .4; }
+  #simulacao input { font: inherit; padding: .35rem .6rem; border-radius: 10px; border: 1px solid #ead9a6; background: #fff; color: var(--texto); width: 13rem; }
+  #ultimo-uid { font-family: ui-monospace, monospace; font-weight: 700; color: #a06f00; }
+  .atalhos { color: var(--texto-suave); font-size: .85rem; margin-top: .4rem; }
+
+  /* ---------- Diálogo de carregar JSON ---------- */
+  dialog { background: #fff; color: var(--texto); border: 1px solid var(--painel-borda); border-radius: 20px; padding: 1.6rem 2rem; max-width: 40rem; font-size: 1.1rem; }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  dialog code { background: var(--painel); padding: .1rem .4rem; border-radius: 6px; }
+
+  /* ---------- Teia ---------- */
+  #teia-resumo {
+    position: absolute; top: .55rem; right: 1rem; left: 13rem; z-index: 2;
+    text-align: right; font-size: 1.15rem; font-weight: 700; line-height: 1.3; color: var(--texto-suave);
+  }
+  #teia-resumo b { color: var(--texto); }
+  #teia-resumo .come { color: #b07a00; }
+  #teia-resumo .comido { color: #c0392b; }
+  .teia-aresta { fill: none; stroke-linecap: round; }
+  .teia-aresta.apagada { stroke: rgba(18, 49, 58, .1); stroke-width: 1.5; }
+  .teia-aresta.fraca { stroke: rgba(18, 49, 58, .3); stroke-width: 2; }
+  .teia-aresta.come { stroke: #e0a100; stroke-width: 4.5; }
+  .teia-aresta.comido { stroke: #d64545; stroke-width: 4.5; }
+  .teia-aresta.nova { stroke-dasharray: 900; stroke-dashoffset: 900; animation: desenha 1.2s ease-out forwards; }
+  @keyframes desenha { to { stroke-dashoffset: 0; } }
+  .teia-no { transition: opacity .3s; }
+  .teia-no.peixe { cursor: pointer; }
+  .teia-no.longe { opacity: .4; }
+  .teia-no text { fill: var(--texto); font-weight: 800; font-family: var(--fonte); paint-order: stroke; stroke: #fff; stroke-width: 4px; }
+  .teia-no.novo { animation: pop .6s cubic-bezier(.2,.9,.3,1.6); transform-box: fill-box; transform-origin: center; }
+  @keyframes pop { from { transform: scale(0); } }
+  .teia-nivel { fill: var(--texto-suave); font-size: 13px; font-weight: 700; }
+  .teia-legenda { fill: var(--texto-suave); font-size: 14px; font-weight: 700; }
+
+  @media (max-width: 900px) {
+    html, body { height: auto; }
+    body { overflow: auto; }
+    main { flex: none; }
+    main { grid-template-columns: 1fr; grid-template-rows: 55vh 45vh auto; }
+    aside { grid-column: 1; grid-row: 3; }
+    #caixa-teia { grid-row: 2; }
+    #teia-resumo { position: static; text-align: left; padding: 3rem 1rem 0; font-size: 1rem; }
+    #caixa-teia { display: flex; flex-direction: column; }
+    #caixa-teia svg { flex: 1; min-height: 0; }
+    #placa-dicas { max-width: calc(100% - 2rem); }
+    #saude-compacta { left: 1rem; right: 1rem; width: auto; top: 3.4rem; }
+    .resumo-final { grid-template-columns: 1fr; }
+    #dicas { font-size: .95rem; }
+  }
+
+  /* ---------- Tela inicial e modos ---------- */
+  #inicio { flex: 1; min-height: 0; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: 1.5rem 1rem;
+    background: linear-gradient(180deg, #fff 0%, #fff 55%, #e1f4f1 100%); }
+  #inicio[hidden] { display: none; }
+  .inicio-conteudo { width: min(100%, 72rem); text-align: center; }
+  .sobretitulo { color: var(--destaque); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  #inicio h1 { font-family: var(--fonte-titulo); font-size: clamp(2.2rem, 4vw, 3.6rem); margin: .2rem 0 0; line-height: 1.05; }
+  .subtitulo { font-size: 1.4rem; color: var(--texto-suave); font-weight: 700; margin: .4rem 0 1.6rem; }
+  .modos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem; }
+  .modo {
+    display: flex; flex-direction: column; align-items: center; gap: .5rem; text-align: center;
+    background: #fff; border: 2px solid var(--painel-borda); border-radius: 24px; padding: 1.6rem 1.3rem 1.3rem;
+    color: var(--texto); box-shadow: 0 6px 0 var(--painel-borda); transition: transform .15s, border-color .15s, box-shadow .15s;
+  }
+  .modo:hover, .modo:focus-visible { transform: translateY(-4px); border-color: var(--destaque); box-shadow: 0 10px 0 #b9e3dd; outline: none; }
+  .modo:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--painel-borda); }
+  .modo .icone { font-size: 3.6rem; line-height: 1; }
+  .modo b { font-family: var(--fonte-titulo); font-size: 1.7rem; line-height: 1.1; }
+  .modo span:not(.icone) { font-size: 1.1rem; line-height: 1.35; color: var(--texto-suave); font-weight: 600; flex: 1; }
+  .modo em { font-style: normal; font-weight: 800; font-size: .9rem; color: var(--destaque); background: var(--destaque-claro); padding: .2rem .8rem; border-radius: 999px; }
+  .inicio-config { margin-top: 1.6rem; display: flex; gap: 1.2rem; align-items: center; justify-content: center; flex-wrap: wrap; font-weight: 800; font-size: 1.1rem; }
+  .inicio-config label { display: inline-flex; align-items: center; gap: .5rem; }
+  .dica-inicio { color: var(--texto-suave); font-weight: 600; font-size: 1rem; }
+
+  /* sem modo escolhido: só a tela inicial; os chips de jogo somem */
+  body:not([data-modo]) main { display: none; }
+  body:not([data-modo]) #chip-contagem, body:not([data-modo]) #btn-inicio,
+  body:not([data-modo]) #btn-nova { display: none; }
+  body:not([data-modo]) header .marca { visibility: hidden; }
+  /* Conheça os peixes: sem pontuação nem vez */
+  body[data-modo="explorar"] #saude-compacta, 
+  body[data-modo="explorar"] #chip-contagem, body[data-modo="explorar"] #placa-dicas { display: none; }
+  #chip-ambiente { background: #fff4cc; border-color: #f0d68a; }
+  #chip-contagem { font-size: 1.2rem; letter-spacing: .08em; padding-top: .2rem; padding-bottom: .2rem; }
+  .chip[hidden] { display: none; }
+
+  #btn-reagir { position: absolute; top: .55rem; left: 11rem; z-index: 4; font-size: 1.15rem; padding: .6rem 1.1rem; background: var(--ok); animation: pulsa 1.6s ease-in-out infinite; }
+  #btn-reagir[hidden] { display: none; }
+  #btn-reagir small { font-weight: 700; opacity: .85; }
+  @keyframes pulsa { 50% { transform: scale(1.06); } }
+
+  /* sorteio e evento (dentro do cartão da sobreposição) */
+  .sorteio small, .evento small { font-weight: 800; color: var(--texto-suave); font-size: 1.1rem; text-transform: uppercase; letter-spacing: .06em; }
+  .roleta { margin: 1.2rem 0 .6rem; display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+  .roleta .icone { font-size: 6rem; line-height: 1; }
+  .roleta b { font-family: var(--fonte-titulo); font-size: 2.6rem; }
+  .icone-grande { font-size: 6rem; line-height: 1.1; margin-top: .4rem; }
+  .cartao-final .vale { background: var(--destaque-claro); border-radius: 14px; padding: .6rem 1rem; font-size: 1.15rem; }
+  .evento .vale { background: #e8f6ea; }
+  .cartao-final .detalhes { color: var(--texto-suave); font-weight: 700; font-size: 1.1rem; }
+  .botoes-final { display: flex; gap: .8rem; justify-content: center; flex-wrap: wrap; }
+
+  @media (max-width: 900px) {
+    .modos { grid-template-columns: 1fr; }
+    .modo { padding: 1.1rem; }
+    .modo .icone { font-size: 2.6rem; }
+    #btn-reagir { font-size: .95rem; top: auto; bottom: 10rem; left: 1rem; }
+  }
+
+  /* ---------- Relatório final ---------- */
+  .cartao-final:has(.relatorio) { max-width: 78rem; width: calc(100% - 2rem); text-align: left; padding: 1.4rem 1.8rem 0; }
+  .relatorio h3 { margin: 1rem 0 .45rem; font-family: var(--fonte-titulo); font-size: 1.3rem; }
+  .rel-topo { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .rel-topo h2 { font-size: 2.4rem; margin: 0; }
+  .rel-resumo { font-size: 1.2rem; font-weight: 700; margin: .3rem 0 .2rem; }
+  .rel-topo .detalhes { margin: 0; }
+  .rel-topo .num { font-size: 5rem; }
+  .rel-colunas { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .8rem; align-items: start; }
+  .rel-caixa { border-radius: 16px; padding: .7rem 1rem .8rem; }
+  .rel-caixa.bom { background: #e8f6ee; }
+  .rel-caixa.ruim { background: #fdeceb; }
+  .rel-caixa h3 { margin: 0 0 .4rem; font-size: 1.15rem; }
+  .rel-caixa ul, .rel-linha { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .4rem; }
+  .rel-caixa li, .rel-linha li { display: flex; align-items: baseline; gap: .55rem; font-size: 1.02rem; line-height: 1.3; }
+  .rel-icone { flex: none; width: 1.5rem; text-align: center; }
+  .pontos { margin-left: auto; flex: none; color: #b3261e; font-family: var(--fonte-titulo); font-size: 1.1rem; }
+  .rel-peixes { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .6rem; }
+  .rel-peixe { border-radius: 14px; padding: .55rem .8rem; background: var(--painel); border-left: 6px solid var(--ok); }
+  .rel-peixe.ruim { border-left-color: var(--erro); background: #fdf1f0; }
+  .rel-peixe.misto { border-left-color: var(--aviso); background: #fff8e1; }
+  .rel-peixe-nome { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+  .rel-peixe-nome b { font-size: 1.1rem; }
+  .rel-peixe-nome small { color: var(--texto-suave); font-weight: 700; }
+  .rel-peixe ul { list-style: none; margin: .25rem 0 0; padding: 0; font-size: .92rem; line-height: 1.3; }
+  .rel-peixe li.bom { color: #1d5e3a; }
+  .rel-peixe li.ruim { color: #8e2b2b; }
+  .rel-linha li { background: var(--painel); border-radius: 10px; padding: .35rem .7rem; }
+  .rel-linha small { color: var(--texto-suave); font-weight: 600; }
+  .delta { margin-left: auto; flex: none; font-family: var(--fonte-titulo); font-size: 1.1rem; color: var(--texto-suave); }
+  .delta.sobe { color: #1d7a44; }
+  .delta.desce { color: #b3261e; }
+  .saude-passo { flex: none; min-width: 2.6rem; text-align: right; font-weight: 800; color: var(--texto-suave); }
+  .rel-criterios { margin-top: .9rem; }
+  .rel-criterios summary { cursor: pointer; font-weight: 800; color: var(--texto-suave); }
+  .rel-criterios .componentes-final { margin-top: .5rem; max-width: 36rem; }
+  .relatorio .botoes-final { position: sticky; bottom: 0; background: #fff; padding: .8rem 0 1.1rem; margin-top: .6rem; }
+  @media (max-width: 900px) {
+    .rel-colunas { grid-template-columns: 1fr; }
+    .rel-topo h2 { font-size: 1.7rem; }
+    .rel-topo .num { font-size: 3.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca">
+    <small>Re-conhecendo nosso rio · Rio Guapiaçu</small>
+    <h1 id="titulo-jogo">Monte a comunidade de peixes</h1>
+  </div>
+  <span class="chip" id="chip-contagem" title="Jogadas da rodada">◻️◻️◻️◻️◻️</span>
+  <span class="chip" id="chip-ambiente" hidden></span>
+  <span class="chip" id="status-leitor" data-estado="desconectado"><span class="ponto"></span><span id="texto-status">Sem leitor</span></span>
+  <button class="btn" id="btn-conectar">Conectar leitor</button>
+  <button class="btn sec" id="btn-simulacao" aria-pressed="false" title="Tecla S">Simulação</button>
+  <button class="btn sec" id="btn-inicio" title="Voltar ao início (tecla I)" aria-label="Início">🏠</button>
+  <button class="btn sec" id="btn-nova" title="Tecla N">Nova rodada</button>
+  <button class="btn sec" id="btn-tela" title="Tela cheia (tecla F)">⛶</button>
+</header>
+
+<main>
+  <section class="caixa" id="caixa-rio">
+    <h2>Nosso rio</h2>
+    <canvas id="rio"></canvas>
+    <div id="avisos" aria-live="polite"></div>
+    <div id="saude-compacta" aria-label="Saúde da comunidade">
+      <div class="saude-topo">
+        <span class="saude-titulo">Saúde do rio</span>
+        <span id="saude-rotulo">Rio vazio</span>
+        <span id="saude-valor">0</span>
+      </div>
+      <div class="barra" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="barra">
+        <div id="barra-vazio"></div>
+        <div id="barra-meta"><span>Meta</span></div>
+      </div>
+    </div>
+    <div id="faixa-meta">Comunidade saudável! 🎉</div>
+    <button class="btn" id="btn-reagir" hidden title="Tecla P"></button>
+    <div id="placa-dicas">
+      <h3>💡 Dicas para a equipe</h3>
+      <ul id="dicas"></ul>
+    </div>
+  </section>
+
+  <section class="caixa" id="caixa-teia">
+    <h2>Quem come quem</h2>
+    <div id="teia-resumo" aria-live="polite"></div>
+    <svg id="teia" role="img" aria-label="Teia alimentar da comunidade"></svg>
+  </section>
+
+  <aside>
+    <section class="caixa" id="caixa-ficha">
+      <h2>Ficha do peixe</h2>
+      <div id="ficha">
+        <div class="ficha-vazia">
+          <div class="grande">Encoste um peixe no leitor</div>
+          e veja quem ele é e como ajuda o rio!
+        </div>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<section id="inicio">
+  <div class="inicio-conteudo">
+    <small class="sobretitulo">Re-conhecendo nosso rio · Rio Guapiaçu</small>
+    <h1>Monte a comunidade de peixes</h1>
+    <p class="subtitulo">Como vocês querem jogar?</p>
+    <div class="modos">
+      <button class="modo" data-modo="livre">
+        <span class="icone">🐟</span><b>Monte a comunidade</b>
+        <span>Juntos, escolham 5 peixes e deixem o rio saudável.</span>
+        <em>Em grupo, todos juntos</em>
+      </button>
+      <button class="modo" data-modo="desafio">
+        <span class="icone">🎲</span><b>Desafio do ambiente</b>
+        <span>O jogo sorteia um lugar da bacia. Quais peixes vivem lá? Pode ter surpresa no meio do caminho!</span>
+        <em>Em grupo, todos juntos</em>
+      </button>
+      <button class="modo" data-modo="explorar">
+        <span class="icone">🔍</span><b>Conheça os peixes</b>
+        <span>Encoste qualquer peixe e descubra quem ele é, o que come e onde vive. Sem pontos.</span>
+        <em>Para todas as idades</em>
+      </button>
+    </div>
+    <div class="inicio-config">
+      <span class="dica-inicio">Conecte o leitor no botão lá em cima, ou use a simulação.</span>
+    </div>
+  </div>
+</section>
+
+<section id="simulacao" aria-label="Modo simulação">
+  <div class="linha" id="botoes-simulacao">
+    <span class="titulo">🧪 Simulação:</span>
+  </div>
+  <div class="linha" style="margin-top:.45rem">
+    <button class="peixe" id="sim-desconhecido"><kbd>U</kbd>UID desconhecido</button>
+    <input id="sim-uid" placeholder="Digite um UID e Enter" autocomplete="off">
+    <button class="peixe" id="sim-desfazer"><kbd>⌫</kbd>Desfazer último</button>
+    <button class="peixe" id="sim-carregar">📂 Carregar especies.json</button>
+    <span style="margin-left:auto">Último UID lido: <span id="ultimo-uid">—</span>
+      <button class="peixe" id="sim-copiar" title="Copiar UID">Copiar</button></span>
+  </div>
+  <div class="atalhos">Atalhos: 1–9, 0, -, =, Q, W, E, T = peixes · U = desconhecido · ⌫ = desfazer · N = nova rodada · I = início · P = reagir ao evento · S = simulação · R = modo revisão (mostra dados a validar) · M = som · F = tela cheia</div>
+</section>
+
+<div id="sobreposicao"><div class="cartao-final" id="cartao-final"></div></div>
+
+<dialog id="dlg-json">
+  <h2 style="margin-top:0">Carregar a tabela de peixes</h2>
+  <p>O navegador não deixou ler <code>especies.json</code> sozinho. Isso é normal quando a página é aberta com dois cliques (<code>file://</code>).</p>
+  <p>Escolha o arquivo <code>web/especies.json</code> abaixo. Ele fica salvo neste navegador para as próximas vezes.</p>
+  <p><input type="file" id="arquivo-json" accept=".json,application/json"></p>
+  <p style="color:var(--texto-suave);font-size:.95rem">Outra opção: na pasta <code>web</code>, rode <code>python3 -m http.server 8000</code> e abra <code>http://localhost:8000</code>. Assim ele lê o arquivo direto, inclusive depois de editado.</p>
+  <form method="dialog"><button class="btn sec">Fechar</button></form>
+</dialog>
+
+<script src="regras.js"></script>
+<script src="ambientes.js"></script>
+<script>
+'use strict';
+const $ = (s) => document.querySelector(s);
+const STATUS_AMEACA = {
+  LC: 'Pouco preocupante', NT: 'Quase ameaçada', VU: 'Vulnerável',
+  EN: 'Em perigo', CR: 'Criticamente em perigo', DD: 'Dados insuficientes', NE: 'Não avaliada'
+};
+
+// ======================================================================
+// Estado do jogo
+// ======================================================================
+const estado = {
+  especies: [],          // lista vinda do JSON
+  porUid: new Map(),     // UID normalizado -> espécie
+  comunidade: [],        // espécies no rio, na ordem em que entraram
+  uidsUsados: new Set(),
+  saude: 0,
+  bruta: 0,
+  metaAvisada: false,
+  rodadaEncerrada: false,
+  som: true,
+  modo: null,            // null = tela inicial | 'livre' | 'desafio' | 'explorar'
+  jogadas: [],
+  historico: [],         // linha do tempo para o relatório: { icone, texto, detalhe, antes, depois, jogada }           // jogadas da rodada: { tipo: 'peixe', sp } ou { tipo: 'reacao', icone }
+  ambiente: null,        // ambiente sorteado (Desafio)
+  evento: null,          // { def, apos, ativo, ocorreu, reagiu, solto }
+  ultimoEvento: null,
+  proximoEvento: null,
+  aguardando: null       // 'sorteio' | 'revelado' | 'evento-chegando' | 'evento'
+};
+
+const normalizarUid = (u) => String(u).toUpperCase().replace(/[^0-9A-Z-]/g, '');
+
+// ======================================================================
+// Carregar especies.json (fetch -> cópia salva -> escolher arquivo)
+// ======================================================================
+const CHAVE_CACHE = 'reconhecendo-rio:especies';
+
+async function carregarEspecies() {
+  try {
+    const r = await fetch('especies.json', { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    const json = await r.json();
+    try { localStorage.setItem(CHAVE_CACHE, JSON.stringify(json)); } catch (_) {}
+    return usarEspecies(json);
+  } catch (_) { /* file:// bloqueia fetch: tenta a cópia salva */ }
+  try {
+    const salvo = localStorage.getItem(CHAVE_CACHE);
+    if (salvo) {
+      usarEspecies(JSON.parse(salvo));
+      console.info('Usando a cópia de especies.json salva no navegador.');
+      return;
+    }
+  } catch (_) {}
+  $('#dlg-json').showModal();
+}
+
+function usarEspecies(json) {
+  const lista = Array.isArray(json) ? json : json.especies;
+  if (!Array.isArray(lista)) { avisar('especies.json em formato inesperado', 'erro'); return; }
+  estado.especies = lista;
+  estado.porUid.clear();
+  lista.forEach((e) => {
+    if (!Regras.GUILDAS[e.guilda_trofica]) console.warn('Guilda desconhecida em', e.nome_popular, e.guilda_trofica);
+    [].concat(e.uid).forEach((u) => {
+      const k = normalizarUid(u);
+      if (estado.porUid.has(k)) console.warn('UID repetido em especies.json:', k);
+      estado.porUid.set(k, e);
+    });
+  });
+  montarBotoesSimulacao();
+  resetarRodada();
+}
+
+$('#arquivo-json').addEventListener('change', async (ev) => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  try {
+    const json = JSON.parse(await f.text());
+    try { localStorage.setItem(CHAVE_CACHE, JSON.stringify(json)); } catch (_) {}
+    usarEspecies(json);
+    $('#dlg-json').close();
+    avisar('Tabela de peixes carregada!', 'info');
+  } catch (e) {
+    avisar('Não consegui ler o arquivo: ' + e.message, 'erro');
+  }
+  ev.target.value = '';
+});
+$('#sim-carregar').addEventListener('click', () => $('#dlg-json').showModal());
+
+// ======================================================================
+// Leitor (Web Serial)
+// ======================================================================
+const Leitor = (() => {
+  let porta = null, leitor = null, canalFechado = null;
+
+  function status(estadoLeitor, texto) {
+    $('#status-leitor').dataset.estado = estadoLeitor;
+    $('#texto-status').textContent = texto;
+    $('#btn-conectar').textContent = estadoLeitor === 'conectado' ? 'Desconectar' : 'Conectar leitor';
+  }
+
+  async function abrir(p) {
+    status('conectando', 'Conectando…');
+    try {
+      await p.open({ baudRate: 115200 });
+    } catch (e) {
+      status('erro', 'Porta ocupada');
+      avisar('Não consegui abrir o leitor. O monitor serial está aberto em outro programa?', 'erro');
+      return;
+    }
+    porta = p;
+    status('conectado', 'Leitor conectado');
+    laco();
+  }
+
+  async function laco() {
+    const decodificador = new TextDecoderStream();
+    canalFechado = porta.readable.pipeTo(decodificador.writable).catch(() => {});
+    leitor = decodificador.readable.getReader();
+    let buffer = '';
+    try {
+      for (;;) {
+        const { value, done } = await leitor.read();
+        if (done) break;
+        buffer += value;
+        let i;
+        while ((i = buffer.indexOf('\n')) >= 0) {
+          processarLinha(buffer.slice(0, i).trim());
+          buffer = buffer.slice(i + 1);
+        }
+      }
+    } catch (e) {
+      console.warn('Leitura serial interrompida:', e);
+    } finally {
+      leitor.releaseLock();
+    }
+  }
+
+  function processarLinha(linha) {
+    if (!linha) return;
+    if (linha.startsWith('UID:')) tocarPeixe(linha.slice(4));
+    else if (linha === 'PRONTO') status('conectado', 'Leitor pronto');
+    else if (linha.startsWith('ERRO:')) { status('erro', 'Erro no leitor'); avisar('O leitor RC522 não respondeu. Confira os fios.', 'erro'); }
+    else console.debug('serial:', linha);
+  }
+
+  async function fechar() {
+    try { if (leitor) await leitor.cancel(); } catch (_) {}
+    try { if (canalFechado) await canalFechado; } catch (_) {}
+    try { if (porta) await porta.close(); } catch (_) {}
+    porta = null; leitor = null;
+    status('desconectado', 'Sem leitor');
+  }
+
+  async function alternar() {
+    if (!('serial' in navigator)) {
+      avisar('Este navegador não tem Web Serial. Use o Chrome ou o Edge no computador.', 'erro');
+      return;
+    }
+    if (porta) return fechar();
+    try {
+      const p = await navigator.serial.requestPort();
+      await abrir(p);
+    } catch (e) {
+      if (e.name !== 'NotFoundError') avisar('Erro ao conectar: ' + e.message, 'erro');
+    }
+  }
+
+  function iniciar() {
+    if (!('serial' in navigator)) {
+      status('erro', 'Sem Web Serial (use Chrome/Edge)');
+      return false;
+    }
+    // Reconecta sozinho a uma porta já autorizada (útil ao recarregar a página na feira)
+    navigator.serial.getPorts().then((ps) => { if (ps.length === 1 && !porta) abrir(ps[0]); }).catch(() => {});
+    navigator.serial.addEventListener('connect', (ev) => { if (!porta) abrir(ev.target); });
+    navigator.serial.addEventListener('disconnect', (ev) => {
+      if (ev.target === porta) { porta = null; status('erro', 'Leitor desligado'); avisar('O leitor foi desconectado do computador.', 'erro'); }
+    });
+    return true;
+  }
+
+  return { alternar, iniciar };
+})();
+
+// ======================================================================
+// Modos, ambiente e evento
+// ======================================================================
+const MODOS = {
+  livre:    { nome: 'Monte a comunidade' },
+  desafio:  { nome: 'Desafio do ambiente' },
+  explorar: { nome: 'Conheça os peixes' }
+};
+
+// Contexto das regras: só existe no Desafio
+function contexto() {
+  if (estado.modo !== 'desafio' || !estado.ambiente) return null;
+  return { ambiente: estado.ambiente, evento: estado.evento && estado.evento.ativo ? estado.evento.def : null };
+}
+function metaAtual() {
+  return (estado.modo === 'desafio' && estado.ambiente && estado.ambiente.meta) || Regras.CONFIG.metaSaude;
+}
+const avaliarAgora = () => Regras.avaliar(estado.comunidade, contexto());
+const maxJogadas = () => Regras.CONFIG.maxPeixesPorRodada;
+const rodadaCheia = () => estado.jogadas.length >= maxJogadas();
+
+function iniciarModo(modo) {
+  estado.modo = modo;
+  document.body.dataset.modo = modo;
+  $('#inicio').hidden = true;
+  if (modo !== 'desafio') { estado.ambiente = null; Rio.definirAmbiente(null); }
+  novaRodada();
+}
+
+function mostrarInicio() {
+  estado.modo = null;
+  delete document.body.dataset.modo;
+  $('#inicio').hidden = false;
+  resetarRodada();
+}
+
+function novaRodada() {
+  if (!estado.modo) return;
+  resetarRodada();
+  if (estado.modo === 'desafio') sortearAmbiente();
+}
+
+function resetarRodada() {
+  estado.comunidade = [];
+  estado.jogadas = [];
+  estado.historico = [];
+  estado.uidsUsados.clear();
+  estado.metaAvisada = false;
+  estado.rodadaEncerrada = false;
+  estado.saude = 0;
+  estado.evento = null;
+  estado.aguardando = null;
+  clearTimeout(estado.timerSorteio);
+  clearTimeout(estado.timerEvento);
+  clearTimeout(estado.timerChegada);
+  $('#sobreposicao').classList.remove('aberta');
+  $('#btn-reagir').hidden = true;
+  Rio.limpar();
+  Rio.definirEvento(null);
+  $('#ficha').innerHTML = `<div class="ficha-vazia"><div class="grande">Encoste um peixe no leitor</div>e veja quem ele é e como ajuda o rio!</div>`;
+  atualizarPainel(avaliarAgora(), null);
+  atualizarCabecalho();
+}
+
+const sortear = (lista) => lista[Math.floor(Math.random() * lista.length)];
+
+// Sorteio do ambiente (com uma "roleta" na tela) e do evento da rodada
+function sortearAmbiente() {
+  const lista = Ambientes.lista;
+  let opcoes = lista.filter((a) => a !== estado.ambiente);
+  if (!opcoes.length) opcoes = lista;
+  const escolhido = sortear(opcoes);
+
+  // evento: evita repetir o da rodada anterior
+  const cfg = Ambientes.CONFIG;
+  let eventos = Ambientes.eventos.filter((e) => e !== estado.ultimoEvento);
+  if (!eventos.length) eventos = Ambientes.eventos;
+  estado.proximoEvento = Math.random() < cfg.chanceEvento
+    ? { def: sortear(eventos), apos: sortear(cfg.eventoAposPeixe) }
+    : null;
+
+  estado.aguardando = 'sorteio';
+  $('#cartao-final').innerHTML = `
+    <div class="sorteio">
+      <small>Sorteando o ambiente…</small>
+      <div class="roleta"><span class="icone" id="roleta-icone"></span><b id="roleta-nome"></b></div>
+    </div>`;
+  $('#sobreposicao').classList.add('aberta');
+
+  const t0 = performance.now();
+  let i = 0;
+  const girar = () => {
+    const passou = performance.now() - t0;
+    if (passou >= cfg.duracaoSorteioMs) return revelarAmbiente(escolhido);
+    const a = lista[i++ % lista.length];
+    $('#roleta-icone').textContent = a.icone;
+    $('#roleta-nome').textContent = a.nome;
+    Som.tique();
+    estado.timerSorteio = setTimeout(girar, 70 + (passou / cfg.duracaoSorteioMs) * 260);
+  };
+  girar();
+}
+
+function revelarAmbiente(amb) {
+  estado.ambiente = amb;
+  estado.aguardando = 'revelado';
+  Rio.definirAmbiente(amb.visual);
+  Som.meta();
+  const hab = amb.habitats.map((h) => Regras.HABITATS[h].toLowerCase()).join(', ');
+  $('#cartao-final').innerHTML = `
+    <div class="sorteio revelado">
+      <small>O ambiente desta rodada é</small>
+      <div class="icone-grande">${amb.icone}</div>
+      <h2>${esc(amb.nome)}</h2>
+      <p>${esc(amb.descricao)}</p>
+      <p class="vale"><b>Quem vive bem aqui:</b> ${esc(amb.vale)}</p>
+      <p class="detalhes">Habitat: ${esc(hab)} · Meta: <b>${metaAtual()}</b>${amb.meta ? ' (ambiente difícil!)' : ''}</p>
+      <button class="btn" id="btn-comecar">Começar!</button>
+      <p class="detalhes">ou encostem o primeiro peixe no leitor</p>
+    </div>`;
+  $('#btn-comecar').addEventListener('click', comecarDesafio);
+  atualizarCabecalho();
+}
+
+function comecarDesafio() {
+  estado.aguardando = null;
+  $('#sobreposicao').classList.remove('aberta');
+  estado.evento = estado.proximoEvento ? { ...estado.proximoEvento, ativo: false, ocorreu: false, reagiu: false, solto: null } : null;
+  atualizarPainel(avaliarAgora(), null);
+  atualizarCabecalho();
+}
+
+// O evento "chega": bloqueia os toques por um instante e então aparece
+function agendarEvento() {
+  estado.aguardando = 'evento-chegando';
+  estado.timerChegada = setTimeout(dispararEvento, Ambientes.CONFIG.atrasoEventoMs);
+}
+
+function dispararEvento() {
+  const ev = estado.evento;
+  if (!ev || ev.ocorreu || estado.rodadaEncerrada) { estado.aguardando = null; return; }
+  ev.ocorreu = true;
+  ev.ativo = true;
+  estado.ultimoEvento = ev.def;
+  const antes = estado.bruta;
+  if (ev.def.soltaExotica) soltarExotica(ev);
+  Rio.definirEvento(ev.def.visual);
+  Som.ruim();
+  const depois = avaliarAgora();
+  const afetados = estado.comunidade.filter((e) => Regras.adaptacao(e, contexto()).tipo === 'evento').map((e) => e.nome_popular);
+  estado.historico.push({ icone: ev.def.icone, texto: ev.def.nome,
+    detalhe: ev.solto ? `Entrou no rio: ${ev.solto.nome_popular}` : afetados.length ? `Sofreram: ${afetados.join(', ')}` : '',
+    antes, depois: depois.bruta, saude: depois.saude, jogada: null });
+  atualizarPainel(depois, null);
+  const r = ev.def.reacao;
+  const sobra = maxJogadas() - estado.jogadas.length;
+  $('#cartao-final').innerHTML = `
+    <div class="evento">
+      <div class="icone-grande">${ev.def.icone}</div>
+      <h2>${esc(ev.def.nome)}</h2>
+      ${ev.solto ? `<p class="detalhes">Entrou no rio: <b>${esc(ev.solto.nome_popular)}</b></p>` : ''}
+      <p>${esc(ev.def.descricao)}</p>
+      <p class="vale">${r.icone} A equipe pode <b>${esc(r.botao.toLowerCase())}</b>. Isso usa 1 das ${sobra} jogadas que faltam, no lugar de um peixe.</p>
+      <button class="btn" id="btn-evento-ok">Continuar</button>
+    </div>`;
+  $('#sobreposicao').classList.add('aberta');
+  estado.aguardando = 'evento';
+  $('#btn-evento-ok').addEventListener('click', fecharEvento);
+  estado.timerEvento = setTimeout(fecharEvento, 12000);
+  $('#btn-reagir').innerHTML = `${r.icone} ${esc(r.botao)} <small>(usa 1 jogada)</small>`;
+  $('#btn-reagir').hidden = false;
+  atualizarCabecalho();
+}
+
+function fecharEvento() {
+  if (estado.aguardando !== 'evento') return;
+  estado.aguardando = null;
+  clearTimeout(estado.timerEvento);
+  $('#sobreposicao').classList.remove('aberta');
+}
+
+// Soltura: um exótico que ainda não está no rio entra sem gastar jogada
+function soltarExotica(ev) {
+  const opcoes = estado.especies.filter((e) => !e.nativo && !estado.comunidade.includes(e));
+  if (!opcoes.length) return;
+  ev.solto = sortear(opcoes);
+  estado.comunidade.push(ev.solto);
+  Rio.adicionarPeixe(ev.solto);
+}
+
+function aplicarReacao(ev, reagir) {
+  ev.ativo = !reagir;
+  ev.reagiu = reagir;
+  if (ev.solto) {
+    if (reagir) { estado.comunidade = estado.comunidade.filter((e) => e !== ev.solto); Rio.removerPeixe(ev.solto); }
+    else if (!estado.comunidade.includes(ev.solto)) { estado.comunidade.push(ev.solto); Rio.adicionarPeixe(ev.solto); }
+  }
+  Rio.definirEvento(reagir ? null : ev.def.visual);
+  $('#btn-reagir').hidden = reagir;
+}
+
+// A equipe reage ao evento: gasta a jogada da vez
+function reagir() {
+  const ev = estado.evento;
+  if (!ev || !ev.ativo || estado.rodadaEncerrada || estado.aguardando === 'evento-chegando') return;
+  if (rodadaCheia()) return;
+  fecharEvento();
+  const antes = estado.bruta;
+  aplicarReacao(ev, true);
+  estado.jogadas.push({ tipo: 'reacao', icone: ev.def.reacao.icone });
+  Som.entrada();
+  avisar(`${ev.def.reacao.icone} ${ev.def.reacao.aviso}`, 'info');
+  const depois = avaliarAgora();
+  estado.historico.push({ icone: ev.def.reacao.icone, texto: ev.def.reacao.botao, detalhe: 'usou 1 jogada', antes, depois: depois.bruta, saude: depois.saude, jogada: estado.jogadas.length });
+  atualizarPainel(depois, null);
+  atualizarCabecalho();
+  if (rodadaCheia()) {
+    estado.rodadaEncerrada = true;
+    setTimeout(mostrarFimDeRodada, 1500);
+  }
+}
+
+// ======================================================================
+// Lógica de jogada
+// ======================================================================
+function tocarPeixe(uidBruto) {
+  const uid = normalizarUid(uidBruto);
+  $('#ultimo-uid').textContent = uid;
+  if (!estado.modo) return;                                     // tela inicial
+  // Cartão na tela: encostar um peixe fecha o evento ou começa o desafio (dá para jogar só com o leitor)
+  if (estado.aguardando === 'sorteio') return;
+  if (estado.aguardando === 'evento-chegando') { avisar('Esperem! Alguma coisa está acontecendo no rio…', 'info'); return; }
+  if (estado.aguardando === 'revelado') comecarDesafio();
+  else if (estado.aguardando === 'evento') fecharEvento();
+  if (estado.rodadaEncerrada) {
+    avisar('A rodada acabou! Toque em "Nova rodada".', 'info');
+    return;
+  }
+  const sp = estado.porUid.get(uid);
+  if (!sp) {
+    Som.erro();
+    avisar('Hmm, não reconheço esse peixe 🤔 Chame um monitor!');
+    console.info('UID desconhecido:', uid, '(copie para especies.json)');
+    return;
+  }
+
+  // Conheça os peixes: sem pontos nem vez; repetir só mostra a ficha de novo
+  if (estado.modo === 'explorar') {
+    if (!estado.comunidade.includes(sp)) {
+      estado.comunidade.push(sp);
+      Rio.adicionarPeixe(sp);
+      Som.entrada();
+    }
+    mostrarFicha(sp, null, false);
+    atualizarPainel(avaliarAgora(), sp);
+    atualizarCabecalho();
+    return;
+  }
+
+  if (estado.uidsUsados.has(uid)) {
+    Som.erro();
+    avisar(`${sp.nome_popular} já está nadando no rio!`);
+    return;
+  }
+  if (!Regras.CONFIG.permitirEspecieRepetida && estado.comunidade.includes(sp)) {
+    Som.erro();
+    avisar(`${sp.nome_popular} já está no rio. Escolha outra espécie!`);
+    return;
+  }
+  if (rodadaCheia()) {
+    avisar('O rio já está cheio nesta rodada!', 'info');
+    return;
+  }
+
+  const antes = estado.saude;
+  const antesBruta = estado.bruta;
+  estado.comunidade.push(sp);
+  estado.jogadas.push({ tipo: 'peixe', sp, uid });
+  estado.uidsUsados.add(uid);
+  const ctx = contexto();
+  const resultado = avaliarAgora();
+  const msg = Regras.mensagemEntrada(sp, antesBruta, resultado.bruta, ctx);
+  const adaptado = Regras.adaptacao(sp, ctx).ok;
+
+  Rio.adicionarPeixe(sp);
+  estado.historico.push({ icone: sp.nativo && adaptado ? '🐟' : '⚠️', texto: sp.nome_popular, detalhe: msg.replace(sp.nome_popular + ': ', ''),
+                          antes: antesBruta, depois: resultado.bruta, saude: resultado.saude, jogada: estado.jogadas.length });
+  mostrarFicha(sp, msg, !sp.nativo || !adaptado || resultado.saude < antes);
+  atualizarPainel(resultado, sp);
+  sp.nativo && adaptado ? Som.entrada() : Som.ruim();
+
+  atualizarCabecalho();
+
+  const peixesJogados = estado.jogadas.filter((j) => j.tipo === 'peixe').length;
+  if (rodadaCheia()) {
+    // última jogada: dá um instante para verem o peixe entrar e já mostra o resultado
+    estado.rodadaEncerrada = true;
+    setTimeout(mostrarFimDeRodada, 1500);
+  } else if (estado.evento && !estado.evento.ocorreu && peixesJogados === estado.evento.apos) {
+    agendarEvento();
+  } else if (!estado.metaAvisada && resultado.saude >= metaAtual()) {
+    estado.metaAvisada = true;
+    setTimeout(celebrarMeta, 900);
+  }
+}
+
+function desfazer() {
+  if (!estado.modo || estado.aguardando === 'evento-chegando') return;
+  if (estado.modo === 'explorar') {
+    const sp = estado.comunidade.pop();
+    if (sp) { Rio.removerPeixe(sp); atualizarPainel(avaliarAgora(), null); atualizarCabecalho(); }
+    return;
+  }
+  const desfeita = estado.jogadas.length;
+  const j = estado.jogadas.pop();
+  if (!j) return;
+  estado.historico = estado.historico.filter((h) => h.jogada !== desfeita);
+  fecharEvento();
+  estado.rodadaEncerrada = false;
+  if (j.tipo === 'reacao') {
+    aplicarReacao(estado.evento, false);
+    avisar('A reação ao evento foi desfeita.', 'info');
+  } else {
+    estado.comunidade = estado.comunidade.filter((e) => e !== j.sp);
+    for (const u of [...estado.uidsUsados]) if (estado.porUid.get(u) === j.sp) estado.uidsUsados.delete(u);
+    Rio.removerPeixe(j.sp);
+    avisar(`${j.sp.nome_popular} saiu do rio.`, 'info');
+  }
+  const r = avaliarAgora();
+  if (r.saude < metaAtual()) estado.metaAvisada = false;
+  atualizarPainel(r, null);
+  atualizarCabecalho();
+}
+
+function atualizarCabecalho() {
+  // jogadas da rodada: 🐟 peixe, ícone da reação (ex. 🌱) e ◻️ o que falta
+  const casas = Array.from({ length: maxJogadas() }, (_, i) => {
+    const j = estado.jogadas[i];
+    return j ? (j.tipo === 'peixe' ? '🐟' : j.icone) : '◻️';
+  });
+  $('#chip-contagem').textContent = casas.join('');
+  $('#chip-contagem').title = `Jogadas: ${estado.jogadas.length} de ${maxJogadas()}`;
+  const amb = estado.modo === 'desafio' && estado.ambiente;
+  $('#chip-ambiente').hidden = !amb;
+  if (amb) $('#chip-ambiente').textContent = `${amb.icone} ${amb.nomeCurto || amb.nome}` + (estado.evento && estado.evento.ativo ? ' ' + estado.evento.def.icone : '');
+  $('#titulo-jogo').textContent = estado.modo ? MODOS[estado.modo].nome : 'Monte a comunidade de peixes';
+  $('#btn-nova').textContent = estado.modo === 'explorar' ? 'Limpar rio' : 'Nova rodada';
+  document.querySelectorAll('#botoes-simulacao button.peixe').forEach((b) => {
+    b.classList.toggle('usado', estado.comunidade.includes(estado.especies[+b.dataset.i]));
+  });
+}
+
+// ======================================================================
+// Painel: saúde, componentes, dicas, teia
+// ======================================================================
+function corSaude(v) { return `hsl(${Math.round(v * 1.25)}, 80%, 40%)`; }
+function rotuloSaude(v, n) {
+  if (n === 0) return 'Rio vazio';
+  if (v < 25) return 'Muito frágil';
+  if (v < 45) return 'Frágil';
+  if (v < metaAtual()) return 'Melhorando';
+  if (v < 90) return 'Saudável';
+  return 'Excelente!';
+}
+
+let animSaude = null;
+function atualizarPainel(r, novo) {
+  const de = estado.saude;
+  estado.saude = r.saude;
+  estado.bruta = r.bruta;
+  cancelAnimationFrame(animSaude);
+  const t0 = performance.now();
+  const passo = (t) => {
+    const k = Math.min(1, (t - t0) / 1000);
+    const v = Math.round(de + (r.saude - de) * (1 - Math.pow(1 - k, 3)));
+    $('#saude-valor').textContent = v;
+    $('#saude-valor').style.color = corSaude(v);
+    if (k < 1) animSaude = requestAnimationFrame(passo);
+  };
+  animSaude = requestAnimationFrame(passo);
+
+  $('#saude-rotulo').textContent = rotuloSaude(r.saude, estado.comunidade.length);
+  $('#saude-rotulo').style.color = corSaude(r.saude);
+  $('#barra-vazio').style.width = (100 - r.saude) + '%';
+  $('#barra').setAttribute('aria-valuenow', r.saude);
+  $('#barra-meta').style.left = metaAtual() + '%';
+  const ctx = contexto();
+  Rio.marcarSofrendo(ctx ? estado.comunidade.filter((e) => !Regras.adaptacao(e, ctx).ok) : []);
+
+  $('#dicas').innerHTML = r.dicas.slice(0, 2).map((d) => `<li>${esc(d)}</li>`).join('') || '<li>Comunidade em equilíbrio. Muito bem!</li>';
+
+  Teia.desenhar(r.teia, novo);
+}
+
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+// ======================================================================
+// Ficha do peixe
+// ======================================================================
+function linhaAmbiente(sp, msg) {
+  const ctx = contexto();
+  if (!ctx) return '';
+  const a = Regras.adaptacao(sp, ctx);
+  if (!a.ok && a.motivo === msg) return '';   // já aparece na mensagem de entrada
+  return `<dt>Aqui</dt><dd>${a.ok ? `✅ Vive bem ${esc(ctx.ambiente.onde)}` : `❌ ${esc(a.motivo)}`}</dd>`;
+}
+
+function mostrarFicha(sp, msg, ruim) {
+  const hab = [].concat(sp.habitat).map((h) => Regras.HABITATS[h] || h).join(', ');
+  const guilda = Regras.GUILDAS[sp.guilda_trofica];
+  const status = String(sp.status_ameaca || 'NE').toUpperCase();
+  const selos = [
+    sp.nativo ? '<span class="selo nativo">Nativo</span>' : '<span class="selo exotico">Exótico</span>',
+    sp.endemico ? '<span class="selo endemico">Endêmico</span>' : '',
+    sp.migrador ? '<span class="selo migrador">Migrador</span>' : '',
+    `<span class="selo ameaca-${status}">${STATUS_AMEACA[status] || esc(status)}</span>`
+  ].join('');
+
+  $('#ficha').innerHTML = `
+    <div class="ficha">
+      <div class="ficha-img" id="ficha-img"></div>
+      <h3 class="ficha-nome">${esc(sp.nome_popular)}</h3>
+      <div class="ficha-cientifico">${esc(sp.nome_cientifico)}</div>
+      <div class="selos">${selos}</div>
+      ${msg ? `<div class="msg-entrada ${ruim ? 'ruim' : ''}">${esc(msg)}</div>` : ''}
+      <dl>
+        ${linhaAmbiente(sp, msg)}
+        <dt>Dieta</dt><dd>${esc(sp.dieta || '')}${guilda ? ` <span style="color:var(--texto-suave)">(${guilda.rotulo.toLowerCase()})</span>` : ''}</dd>
+        <dt>Habitat</dt><dd>${esc(hab)}</dd>
+        <dt>Migração</dt><dd>${sp.migrador ? 'Sim, percorre o rio para se reproduzir' : 'Não migra'}</dd>
+        <dt>Origem</dt><dd>${sp.nativo ? (sp.endemico ? 'Nativo e endêmico da região' : 'Nativo da Mata Atlântica') : 'Exótico: veio de outro lugar'}</dd>
+      </dl>
+      <p class="descricao">${esc(sp.descricao_curta)}</p>
+      ${sp.foto ? `
+      <figure class="foto-real" id="foto-real" hidden>
+        <img alt="Foto de ${esc(sp.nome_popular)}">
+        <figcaption>📷 ${esc(sp.foto_credito || 'Foto do projeto')}${sp.foto_licenca ? ` · ${esc(sp.foto_licenca)}` : ''}${sp.foto_fonte ? ' · Wikimedia Commons' : ''}</figcaption>
+      </figure>
+      <p class="foto-faltando" id="foto-faltando">📷 Foto real ainda não adicionada: rode <code>ferramentas/baixar_fotos.py</code> ou salve em <code>web/${esc(sp.foto)}</code></p>` : ''}
+      ${sp.validar ? `<div class="revisao">⚠ Dados a validar: ${esc(sp.notas_validacao || 'sem nota')}</div>` : ''}
+    </div>`;
+
+  // foto real embaixo da descrição (só aparece se o arquivo existir)
+  const fig = $('#foto-real');
+  if (fig) {
+    const foto = fig.querySelector('img');
+    foto.onload = () => { fig.hidden = false; $('#foto-faltando').remove(); };
+    foto.src = sp.foto;
+  }
+
+  const alvo = $('#ficha-img');
+  const desenhar = () => {
+    const c = document.createElement('canvas');
+    c.width = 360; c.height = 200;
+    const g = c.getContext('2d');
+    g.translate(180, 100);
+    Peixe.desenhar(g, sp, 270, 0);
+    alvo.replaceChildren(c);
+  };
+  if (sp.imagem) {
+    const img = new Image();
+    img.alt = sp.nome_popular;
+    img.onload = () => alvo.replaceChildren(img);
+    img.onerror = desenhar;
+    img.src = sp.imagem;
+  } else desenhar();
+}
+
+// ======================================================================
+// Desenho de peixes (canvas) — formas simples a partir de "visual"
+// ======================================================================
+const Peixe = (() => {
+  const FORMAS = {
+    fusiforme: { h: 0.2,  cauda: 'garfo',   dorsal: 'pequena' },
+    alto:      { h: 0.32, cauda: 'reta',    dorsal: 'longa' },
+    alongado:  { h: 0.15, cauda: 'redonda', dorsal: 'pequena' },
+    achatado:  { h: 0.17, cauda: 'garfo',   dorsal: 'vela', placas: true, barriga: true },
+    bagre:     { h: 0.15, cauda: 'garfo',   dorsal: 'pequena', bigode: 3 },
+    enguia:    { h: 0.08, cauda: 'redonda', dorsal: 'nenhuma', bigode: 2 },
+    gobio:     { h: 0.13, cauda: 'redonda', dorsal: 'dupla', barriga: true }
+  };
+
+  function clarear(hex, q) {
+    const n = parseInt(hex.slice(1), 16);
+    const f = (c) => Math.round(c + (255 - c) * q);
+    return `rgb(${f(n >> 16)}, ${f((n >> 8) & 255)}, ${f(n & 255)})`;
+  }
+
+  // Desenha virado para a direita, centrado em (0,0). t = fase da natação.
+  function desenhar(ctx, sp, L, t) {
+    const v = sp.visual || {};
+    const f = FORMAS[v.forma] || FORMAS.fusiforme;
+    const cor = v.cor || '#9fb8c0';
+    const det = v.detalhe || '#334';
+    const h = L * f.h;
+    const balanco = Math.sin(t * 8) * 0.18;
+
+    ctx.save();
+    // cauda
+    ctx.save();
+    ctx.translate(-L * 0.38, 0);
+    ctx.rotate(balanco);
+    ctx.fillStyle = cor;
+    ctx.beginPath();
+    if (f.cauda === 'garfo') {
+      ctx.moveTo(0, 0); ctx.lineTo(-L * 0.2, -h * 1.1); ctx.lineTo(-L * 0.12, 0); ctx.lineTo(-L * 0.2, h * 1.1);
+    } else if (f.cauda === 'redonda') {
+      ctx.moveTo(0, -h * 0.4); ctx.quadraticCurveTo(-L * 0.24, -h * 1.1, -L * 0.2, 0); ctx.quadraticCurveTo(-L * 0.24, h * 1.1, 0, h * 0.4);
+    } else {
+      ctx.moveTo(0, -h * 0.3); ctx.lineTo(-L * 0.16, -h * 0.9); ctx.lineTo(-L * 0.16, h * 0.9); ctx.lineTo(0, h * 0.3);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // nadadeira dorsal
+    ctx.fillStyle = det;
+    ctx.beginPath();
+    if (f.dorsal === 'vela') {
+      ctx.moveTo(L * 0.18, -h * 0.85); ctx.quadraticCurveTo(L * 0.05, -h * 2.2, -L * 0.15, -h * 0.9);
+    } else if (f.dorsal === 'longa') {
+      ctx.moveTo(L * 0.2, -h * 0.9); ctx.quadraticCurveTo(0, -h * 1.45, -L * 0.3, -h * 0.5);
+    } else if (f.dorsal === 'dupla') {
+      ctx.moveTo(L * 0.12, -h * 0.9); ctx.quadraticCurveTo(L * 0.05, -h * 1.8, -L * 0.02, -h * 0.95);
+      ctx.moveTo(-L * 0.08, -h * 0.9); ctx.quadraticCurveTo(-L * 0.15, -h * 1.7, -L * 0.25, -h * 0.7);
+    } else if (f.dorsal === 'pequena') {
+      ctx.moveTo(L * 0.08, -h * 0.92); ctx.quadraticCurveTo(-L * 0.02, -h * 1.7, -L * 0.1, -h * 0.85);
+    }
+    ctx.closePath(); ctx.fill();
+
+    // corpo
+    const ondula = v.forma === 'enguia' ? Math.sin(t * 6) * h * 0.6 : 0;
+    const grad = ctx.createLinearGradient(0, -h, 0, h);
+    grad.addColorStop(0, cor);
+    grad.addColorStop(f.barriga ? 0.7 : 0.55, cor);
+    grad.addColorStop(1, clarear(cor, 0.55));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(L * 0.5, f.barriga ? h * 0.3 : 0);
+    ctx.bezierCurveTo(L * 0.42, -h * 1.05, -L * 0.15, -h * 1.05 + ondula, -L * 0.4, -h * 0.25);
+    ctx.lineTo(-L * 0.4, h * 0.25);
+    if (f.barriga) ctx.bezierCurveTo(-L * 0.15, h * 0.9 + ondula, L * 0.3, h * 0.95, L * 0.5, h * 0.3);
+    else ctx.bezierCurveTo(-L * 0.15, h * 1.05 + ondula, L * 0.42, h * 1.05, L * 0.5, 0);
+    ctx.closePath(); ctx.fill();
+
+    // detalhes
+    ctx.strokeStyle = det; ctx.fillStyle = det; ctx.lineWidth = Math.max(1, L * 0.012);
+    if (f.placas) {
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.arc(L * (0.2 - i * 0.12), 0, h * 0.9, -0.9, 0.9);
+        ctx.globalAlpha = 0.4; ctx.stroke(); ctx.globalAlpha = 1;
+      }
+    } else if (v.forma === 'alto') {
+      for (let i = 0; i < 6; i++) {
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath(); ctx.arc(L * (0.18 - i * 0.08), (i % 2 ? -1 : 1) * h * 0.25, L * 0.018, 0, 6.3); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    } else {
+      ctx.globalAlpha = 0.55;
+      ctx.beginPath(); ctx.moveTo(L * 0.3, 0); ctx.lineTo(-L * 0.36, 0); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // olho
+    const eyeX = L * 0.36, eyeY = f.barriga ? -h * 0.1 : -h * 0.22;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(eyeX, eyeY, L * 0.035, 0, 6.3); ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.arc(eyeX + L * 0.008, eyeY, L * 0.02, 0, 6.3); ctx.fill();
+
+    // bigodes (barbilhões)
+    if (f.bigode) {
+      ctx.strokeStyle = det; ctx.lineWidth = Math.max(1, L * 0.01);
+      for (let i = 0; i < f.bigode; i++) {
+        ctx.beginPath();
+        ctx.moveTo(L * 0.47, h * 0.15);
+        ctx.quadraticCurveTo(L * 0.6, h * (0.3 + i * 0.3), L * (0.5 + 0.15 * (i + 1) * 0.6), h * (0.9 + i * 0.4) + Math.sin(t * 4 + i) * h * 0.2);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  return { desenhar };
+})();
+
+// ======================================================================
+// Rio animado (canvas)
+// ======================================================================
+const Rio = (() => {
+  const cv = $('#rio');
+  const ctx = cv.getContext('2d');
+  let W = 0, H = 0;
+  let peixes = [], bolhas = [], particulas = [], plantas = [], pedras = [], ondas = [], espuma = [], tocos = [];
+  let ultimo = performance.now();
+  let sofrendo = new Set();
+
+  const TAMANHO = { pequeno: 0.09, medio: 0.14, grande: 0.2 };   // fração da altura
+  const COLUNA = { superficie: [0.22, 0.34], meio: [0.36, 0.58], fundo: [0.66, 0.78] };
+  const rnd = (a, b) => a + Math.random() * (b - a);
+
+  // Aparência do cenário. Cada ambiente (ambientes.js) troca só o que precisar.
+  const PADRAO = {
+    ceu: ['#9fd8e8', '#d6f1e4'], agua: ['#1b8a9a', '#106a7d', '#0a4352'], areia: ['#9b8462', '#6d5a40'],
+    mata: '#2e6b3e', densidadeMata: 1, corrente: 1, espuma: false, pedras: 1, plantas: 'algas', barragem: false
+  };
+  let vis = { ...PADRAO };
+  let ev = {};   // visual do evento: { turbidez, corTurbidez, semMata, cano, espumaSuja, nivel, sol, corrente }
+  const superficie = () => H * (0.12 + (ev.nivel || 0));          // a seca baixa o nível da água
+  const correnteAtual = () => (ev.corrente != null ? Math.min(ev.corrente, vis.corrente) : vis.corrente);
+
+  function definirAmbiente(v) { vis = { ...PADRAO, ...(v || {}) }; gerarCenario(); }
+  function definirEvento(v) { ev = v || {}; }
+  function marcarSofrendo(lista) { sofrendo = new Set(lista); }
+  const limiteDireito = () => (vis.barragem ? W * 0.92 : W);
+
+  function redimensionar() {
+    const dpr = window.devicePixelRatio || 1;
+    const r = cv.getBoundingClientRect();
+    W = r.width; H = r.height;
+    if (!W || !H) return;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    gerarCenario();
+    peixes.forEach(posicionarFaixa);
+  }
+
+  function gerarCenario() {
+    const porPlanta = { algas: 70, poucas: 160, taboa: 38 }[vis.plantas] || 70;
+    plantas = Array.from({ length: Math.round(W / porPlanta) }, () => ({
+      x: rnd(0, limiteDireito()), h: rnd(0.15, 0.42) * H, fase: rnd(0, 6),
+      cor: Math.random() < 0.5 ? '#2f7d4f' : '#3d9a5a', larg: rnd(6, 14)
+    }));
+    // pedras: as grandes primeiro (ficam atrás); a cabeceira usa "pedregulho" com muitas grandes e médias
+    const escala = H / 600;
+    const pedra = (min, max, tipo) => ({
+      x: rnd(-20, W + 20), r: rnd(min, max) * escala * vis.pedras, tipo, dy: rnd(0, 14),
+      cor: `hsl(${rnd(25, 42)}, ${rnd(8, 22)}%, ${rnd(30, 46)}%)`, achata: rnd(0.55, 0.8)
+    });
+    pedras = vis.pedregulho
+      ? [
+          ...Array.from({ length: Math.round(W / 150) }, () => ({ ...pedra(75, 125, 'grande'), dy: rnd(-6, 10) })),
+          ...Array.from({ length: Math.round(W / 50) }, () => ({ ...pedra(32, 58, 'media'), dy: rnd(-4, 16) })),
+          ...Array.from({ length: Math.round(W / 30) }, () => pedra(10, 22, 'pequena'))
+        ]
+      : Array.from({ length: Math.round(W / 45) }, () => pedra(10, 34, 'pequena'));
+    particulas = Array.from({ length: 70 }, () => ({ x: rnd(0, W), y: rnd(0.15, 0.85) * H, v: rnd(20, 60), l: rnd(10, 40) }));
+    espuma = vis.espuma ? Array.from({ length: 45 }, () => ({ x: rnd(0, W), y: H * rnd(0.13, 0.2), v: rnd(160, 280), l: rnd(20, 60) })) : [];
+    tocos = Array.from({ length: Math.round(W / 140) }, () => ({ x: rnd(0, W), h: rnd(6, 14), r: rnd(5, 9) }));
+  }
+
+  function posicionarFaixa(p) {
+    const [a, b] = COLUNA[(p.sp.visual || {}).coluna] || COLUNA.meio;
+    p.baseY = rnd(a, b) * H;
+  }
+
+  function adicionarPeixe(sp) {
+    const L = (TAMANHO[sp.porte] || TAMANHO.medio) * H * 1.6;
+    const p = { sp, L, x: -L, y: 0, baseY: 0, dir: 1, giro: 1, fase: rnd(0, 6),
+                vel: rnd(40, 70) * (sp.porte === 'grande' ? 0.8 : 1), entrando: true, alvoX: rnd(0.2, 0.8) * limiteDireito(),
+                fundo: (sp.visual || {}).coluna === 'fundo', pausa: 0, amp: rnd(6, 14) };
+    posicionarFaixa(p);
+    p.y = p.baseY;
+    peixes.push(p);
+    // respingo na entrada
+    ondas.push({ x: 40, y: H * 0.12, r: 4, a: 1 });
+    for (let i = 0; i < 18; i++) bolhas.push({ x: rnd(0, 60), y: p.baseY + rnd(-20, 20), r: rnd(2, 6), v: rnd(30, 70) });
+  }
+
+  function removerPeixe(sp) {
+    const i = peixes.findIndex((p) => p.sp === sp);
+    if (i >= 0) peixes.splice(i, 1);
+  }
+
+  function limpar() { peixes = []; }
+
+  function atualizar(dt) {
+    const dirMax = limiteDireito();
+    peixes.forEach((p) => {
+      p.fase += dt;
+      const lento = sofrendo.has(p.sp) ? 0.3 : 1;
+      if (p.entrando) {
+        p.x += p.vel * 3.2 * dt;
+        if (p.x >= p.alvoX) p.entrando = false;
+      } else if (p.pausa > 0) {
+        p.pausa -= dt;
+      } else {
+        p.x += p.dir * p.vel * (p.fundo ? 0.45 : 1) * lento * dt;
+        if (p.x > dirMax - p.L * 0.6) p.dir = -1;
+        if (p.x < p.L * 0.6) p.dir = 1;
+        if (Math.random() < dt * 0.15) p.dir *= -1;
+        if (p.fundo && Math.random() < dt * 0.3) p.pausa = rnd(0.8, 2.5);
+      }
+      p.giro += (p.dir - p.giro) * Math.min(1, dt * 5);
+      p.y = p.baseY + Math.sin(p.fase * 0.9) * (p.fundo ? 3 : p.amp);
+      p.y = Math.max(p.y, superficie() + p.L * 0.25);              // ninguém fica fora d'água na seca
+    });
+    // evita peixes empilhados exatamente no mesmo ponto
+    for (let i = 0; i < peixes.length; i++) for (let j = i + 1; j < peixes.length; j++) {
+      const a = peixes[i], b = peixes[j];
+      const dx = b.x - a.x, dy = b.baseY - a.baseY;
+      const min = (a.L + b.L) * 0.35;
+      if (Math.abs(dx) < min && Math.abs(dy) < min * 0.5) {
+        a.baseY = Math.max(H * 0.2, a.baseY - dt * 15); b.baseY = Math.min(H * 0.8, b.baseY + dt * 15);
+      }
+    }
+    particulas.forEach((q) => { q.x += q.v * correnteAtual() * dt; if (q.x > W + 40) { q.x = -40; q.y = rnd(0.15, 0.85) * H; } });
+    espuma.forEach((q) => { q.x += q.v * dt; if (q.x > W + 60) { q.x = -60; q.y = H * rnd(0.13, 0.2); } });
+    if (Math.random() < dt * 2) bolhas.push({ x: rnd(0, W), y: H * 0.86, r: rnd(2, 5), v: rnd(20, 50) });
+    bolhas.forEach((b) => { b.y -= b.v * dt; b.x += Math.sin(b.y * 0.05) * 0.3; });
+    bolhas = bolhas.filter((b) => b.y > superficie());
+    ondas.forEach((o) => { o.r += 60 * dt; o.a -= dt * 0.8; });
+    ondas = ondas.filter((o) => o.a > 0);
+  }
+
+  function desenharMargem(sup) {
+    if (ev.semMata) {
+      // margem desmatada: barranco de terra e tocos
+      ctx.fillStyle = '#a07a4a';
+      ctx.beginPath(); ctx.moveTo(0, sup + 2);
+      for (let x = 0; x <= W; x += 30) ctx.lineTo(x, sup - 10 - 6 * Math.sin(x * 0.05));
+      ctx.lineTo(W, sup + 2); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#6b4a2a';
+      tocos.forEach((t) => ctx.fillRect(t.x, sup - 10 - t.h, t.r, t.h));
+      return;
+    }
+    ctx.fillStyle = vis.mata;
+    const passo = 34 / vis.densidadeMata;
+    for (let x = 0; x < W; x += passo) {
+      const r = 18 + 12 * Math.sin(x * 0.13);
+      ctx.beginPath(); ctx.arc(x, sup - 2, r, Math.PI, 0); ctx.fill();
+    }
+  }
+
+  function desenhar(t) {
+    const sup = superficie(), fundoY = H * 0.86, sup0 = H * 0.12;
+    const corrente = correnteAtual();
+    // céu e margem
+    let g = ctx.createLinearGradient(0, 0, 0, sup);
+    const ceu = ev.sol ? ['#f6cf6e', '#fbeab8'] : vis.ceu;
+    g.addColorStop(0, ceu[0]); g.addColorStop(1, ceu[1]);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, sup + 4);
+    if (ev.sol) {   // sol forte
+      ctx.fillStyle = 'rgba(255, 190, 40, .9)';
+      ctx.beginPath(); ctx.arc(W * 0.6, sup0 * 0.45, sup0 * 0.32, 0, 6.3); ctx.fill();
+    }
+    desenharMargem(sup0);
+    if (sup > sup0 + 2) {   // seca: barranco de lama exposto entre o nível normal e o atual
+      ctx.fillStyle = '#9a7b52'; ctx.fillRect(0, sup0 - 2, W, sup - sup0 + 4);
+      ctx.strokeStyle = 'rgba(90, 60, 30, .5)'; ctx.lineWidth = 1.5;
+      for (let x = 20; x < W; x += 55) { ctx.beginPath(); ctx.moveTo(x, sup0 + 4); ctx.lineTo(x + 8, sup0 + (sup - sup0) * 0.5); ctx.lineTo(x - 4, sup - 2); ctx.stroke(); }
+    }
+    if (ev.cano) {   // cano de esgoto na margem
+      const cx = W * 0.5;
+      ctx.fillStyle = '#7d8486'; ctx.fillRect(cx - 40, sup0 - 22, 60, 16);
+      ctx.fillStyle = '#5c6264'; ctx.fillRect(cx + 14, sup0 - 26, 10, 24);
+      ctx.fillStyle = `rgba(80, 70, 40, ${0.6 + 0.2 * Math.sin(t * 6)})`;
+      ctx.fillRect(cx + 16, sup0 - 4, 6, sup - sup0 + 14);
+    }
+    // água
+    g = ctx.createLinearGradient(0, sup, 0, H);
+    g.addColorStop(0, vis.agua[0]); g.addColorStop(0.5, vis.agua[1]); g.addColorStop(1, vis.agua[2]);
+    ctx.fillStyle = g;
+    const onda = corrente > 1.5 ? 7 : corrente < 0.3 ? 1.5 : 4;
+    ctx.beginPath(); ctx.moveTo(0, sup);
+    for (let x = 0; x <= W; x += 10) ctx.lineTo(x, sup + Math.sin(x * 0.02 + t * 1.5 * Math.max(0.3, corrente)) * onda);
+    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+    // raios de luz
+    ctx.save(); ctx.globalAlpha = 0.07; ctx.fillStyle = '#fff';
+    for (let i = 0; i < 6; i++) {
+      const x = (i / 6) * W + Math.sin(t * 0.3 + i) * 30;
+      ctx.beginPath(); ctx.moveTo(x, sup); ctx.lineTo(x + 60, sup); ctx.lineTo(x + 180, fundoY); ctx.lineTo(x + 60, fundoY); ctx.fill();
+    }
+    ctx.restore();
+    // correnteza e espuma das corredeiras
+    ctx.strokeStyle = `rgba(220, 250, 255, ${0.16 * Math.min(1, corrente)})`; ctx.lineWidth = 2;
+    particulas.forEach((q) => { ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(q.x + q.l, q.y); ctx.stroke(); });
+    ctx.strokeStyle = 'rgba(255, 255, 255, .55)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    if (!ev.nivel) espuma.forEach((q) => { ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(q.x + q.l, q.y + Math.sin(q.x * 0.05) * 2); ctx.stroke(); });
+    // plantas
+    plantas.forEach((p) => {
+      ctx.lineCap = 'round';
+      if (vis.plantas === 'taboa') {
+        // taboa: haste reta que passa da superfície, com a "espiga" marrom
+        const topo = sup - p.h * 0.25;
+        const balanco = Math.sin(t * 0.8 + p.fase) * 4;
+        ctx.strokeStyle = '#5c7f3a'; ctx.lineWidth = Math.max(3, p.larg * 0.45);
+        ctx.beginPath(); ctx.moveTo(p.x, fundoY + 6); ctx.lineTo(p.x + balanco, topo); ctx.stroke();
+        ctx.fillStyle = '#7a4f2a';
+        ctx.beginPath(); ctx.ellipse(p.x + balanco, topo + 10, 4, 12, 0, 0, 6.3); ctx.fill();
+        return;
+      }
+      ctx.strokeStyle = p.cor; ctx.lineWidth = p.larg;
+      const balanco = Math.sin(t * 1.2 + p.fase) * 14 * Math.min(1.6, Math.max(0.3, corrente));
+      ctx.beginPath(); ctx.moveTo(p.x, fundoY + 6);
+      ctx.quadraticCurveTo(p.x + balanco, fundoY - p.h * 0.5, p.x + balanco * 1.6, fundoY - p.h);
+      ctx.stroke();
+    });
+    // fundo de areia e pedras
+    g = ctx.createLinearGradient(0, fundoY, 0, H);
+    g.addColorStop(0, vis.areia[0]); g.addColorStop(1, vis.areia[1]);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(0, fundoY);
+    for (let x = 0; x <= W; x += 20) ctx.lineTo(x, fundoY + Math.sin(x * 0.03) * 5);
+    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+    pedras.forEach((p) => {
+      const y = fundoY + 8 + p.dy, ry = p.r * (p.tipo === 'pequena' ? 0.6 : p.achata);
+      ctx.fillStyle = p.cor;
+      ctx.beginPath(); ctx.ellipse(p.x, y, p.r, ry, 0, Math.PI, 0); ctx.fill();
+      if (p.tipo !== 'pequena') {
+        // brilho em cima e um pouco de musgo nas pedras maiores
+        ctx.fillStyle = 'rgba(255, 255, 255, .13)';
+        ctx.beginPath(); ctx.ellipse(p.x - p.r * 0.2, y - ry * 0.7, p.r * 0.5, ry * 0.22, -0.2, 0, 6.3); ctx.fill();
+        ctx.fillStyle = 'rgba(70, 120, 50, .35)';
+        ctx.beginPath(); ctx.ellipse(p.x + p.r * 0.15, y - ry * 0.92, p.r * 0.45, ry * 0.12, 0, 0, 6.3); ctx.fill();
+      }
+      if (p.tipo === 'grande' && corrente > 1.5) {
+        // água batendo na pedra grande
+        ctx.strokeStyle = 'rgba(255, 255, 255, .5)'; ctx.lineWidth = 2;
+        for (let k = 0; k < 3; k++) {
+          const f = (t * 1.8 + k / 3) % 1;
+          ctx.beginPath(); ctx.arc(p.x - p.r * 0.9 + f * 10, y - ry * 0.5, ry * (0.35 + f * 0.25), -1.2, 0.4); ctx.stroke();
+        }
+      }
+    });
+    // barragem (represa): muro de concreto à direita
+    if (vis.barragem) {
+      const x0 = W * 0.93;
+      ctx.fillStyle = '#a3abae'; ctx.fillRect(x0, sup - H * 0.07, W - x0, H);
+      ctx.fillStyle = '#8a9295';
+      for (let y = sup; y < H; y += 26) ctx.fillRect(x0, y, W - x0, 3);
+      ctx.fillStyle = '#c7cdcf'; ctx.fillRect(x0, sup - H * 0.07, W - x0, 6);
+    }
+    // água turva (evento): barro na água, por baixo dos peixes
+    const corT = ev.corTurbidez || '150, 110, 60';
+    if (ev.turbidez) { ctx.fillStyle = `rgba(${corT}, ${ev.turbidez})`; ctx.fillRect(0, sup, vis.barragem ? W * 0.93 : W, fundoY - sup + 10); }
+    // peixes (do fundo para a frente); os que não se adaptam ficam apagados e lentos
+    [...peixes].sort((a, b) => a.L - b.L).forEach((p) => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.scale(p.giro, 1);
+      if (sofrendo.has(p.sp)) { ctx.globalAlpha = 0.45; ctx.rotate(0.25 * p.giro); }
+      Peixe.desenhar(ctx, p.sp, p.L, p.fase * (p.pausa > 0 ? 0.2 : 1) * (sofrendo.has(p.sp) ? 0.4 : 1));
+      ctx.restore();
+    });
+    if (ev.turbidez) { ctx.fillStyle = `rgba(${corT}, ${ev.turbidez * 0.35})`; ctx.fillRect(0, sup, W, fundoY - sup); }
+    if (ev.espumaSuja) {   // espuma suja boiando
+      ctx.fillStyle = 'rgba(225, 220, 190, .8)';
+      for (let i = 0; i < 9; i++) {
+        const x = ((i * 173 + t * 25) % (W + 80)) - 40;
+        ctx.beginPath(); ctx.ellipse(x, sup + 4, 26 + (i % 3) * 10, 6, 0, 0, 6.3); ctx.fill();
+      }
+    }
+    // bolhas
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 1.5;
+    bolhas.forEach((b) => { ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.3); ctx.stroke(); });
+    ondas.forEach((o) => { ctx.strokeStyle = `rgba(255,255,255,${o.a})`; ctx.beginPath(); ctx.ellipse(o.x, o.y, o.r * 2, o.r * 0.5, 0, 0, 6.3); ctx.stroke(); });
+  }
+
+  function quadro(agora) {
+    const dt = Math.min(0.05, (agora - ultimo) / 1000);
+    ultimo = agora;
+    if (W > 0) { atualizar(dt); desenhar(agora / 1000); }
+    requestAnimationFrame(quadro);
+  }
+
+  new ResizeObserver(redimensionar).observe(cv);
+  requestAnimationFrame(quadro);
+  return { adicionarPeixe, removerPeixe, limpar, definirAmbiente, definirEvento, marcarSofrendo };
+})();
+
+// ======================================================================
+// Teia alimentar (SVG)
+// ======================================================================
+const Teia = (() => {
+  const svg = $('#teia');
+  const resumo = $('#teia-resumo');
+  const NS = 'http://www.w3.org/2000/svg';
+  const NIVEIS = ['Alimentos', 'Comem a base', 'Consumidores', 'Predadores'];
+  let conhecidos = new Set();
+  let teia = { nos: [], arestas: [] };
+  let foco = null;   // id do peixe em destaque: o último que entrou, ou o que foi tocado na teia
+
+  function el(tag, attrs, pai) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (pai) pai.appendChild(e);
+    return e;
+  }
+
+  // Chamado pelo painel a cada mudança na comunidade
+  function atualizar(novaTeia, novo) {
+    teia = novaTeia;
+    const peixes = teia.nos.filter((n) => n.tipo === 'peixe');
+    if (novo) foco = Regras.idDe(novo);
+    else if (!peixes.some((n) => n.id === foco)) foco = peixes.length ? peixes[peixes.length - 1].id : null;
+    desenhar();
+  }
+
+  function nomeDo(id) {
+    const no = teia.nos.find((n) => n.id === id);
+    return !no ? id : no.tipo === 'recurso' ? no.rotulo.toLowerCase() : no.especie.nome_popular;
+  }
+
+  function escreverResumo() {
+    const no = teia.nos.find((n) => n.id === foco);
+    if (!no) {
+      resumo.innerHTML = teia.nos.length ? 'Toque num peixe para ver o que ele come' : '';
+      return;
+    }
+    const come = teia.arestas.filter((a) => a.para === foco).map((a) => nomeDo(a.de));
+    const comidoPor = teia.arestas.filter((a) => a.de === foco).map((a) => nomeDo(a.para));
+    resumo.innerHTML =
+      `<b>${esc(no.especie.nome_popular)}</b> <span class="come">come ${esc(come.join(', ') || 'nada daqui')}</span>` +
+      (comidoPor.length
+        ? ` · <span class="comido">é comido por ${esc(comidoPor.join(', '))}</span>`
+        : ' · ninguém aqui come ele');
+  }
+
+  function desenhar() {
+    const r = svg.getBoundingClientRect();
+    const W = Math.max(300, r.width), H = Math.max(160, r.height);
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.replaceChildren();
+    escreverResumo();
+
+    const defs = el('defs', {}, svg);
+    [['seta-fraca', 'rgba(18,49,58,.4)'], ['seta-come', '#e0a100'], ['seta-comido', '#d64545']].forEach(([id, cor]) => {
+      const m = el('marker', { id, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse' }, defs);
+      el('path', { d: 'M0,0 L10,5 L0,10 z', fill: cor }, m);
+    });
+
+    const topo = 78, base = H - 30, esq = 130, dir = W - 40;
+    const yNivel = (n) => base - (n / 3) * (base - topo);
+    NIVEIS.forEach((rot, n) => {
+      el('line', { x1: esq - 10, x2: dir + 20, y1: yNivel(n), y2: yNivel(n), stroke: 'rgba(18,49,58,.07)', 'stroke-width': 1 }, svg);
+      el('text', { x: 14, y: yNivel(n) + 4, class: 'teia-nivel' }, svg).textContent = rot;
+    });
+
+    if (!teia.nos.length) {
+      el('text', { x: W / 2, y: H / 2, 'text-anchor': 'middle', class: 'teia-legenda' }, svg)
+        .textContent = 'A teia aparece aqui conforme os peixes entram no rio';
+      conhecidos = new Set();
+      return;
+    }
+
+    // Cada peixe ganha sua própria coluna (na ordem em que entrou) e fica na altura do seu nível,
+    // assim nenhum nó cobre outro. Alimentos: ordenados pela posição de quem os come,
+    // para as setas cruzarem o mínimo possível.
+    const pos = {};
+    const peixes = teia.nos.filter((x) => x.tipo === 'peixe');
+    peixes.forEach((no, i) => { pos[no.id] = { x: esq + (i + 0.5) * ((dir - esq) / peixes.length), y: yNivel(no.nivel) }; });
+    const recursos = teia.nos.filter((x) => x.tipo === 'recurso').map((no) => {
+      const xs = teia.arestas.filter((a) => a.de === no.id && pos[a.para]).map((a) => pos[a.para].x);
+      return { no, media: xs.reduce((s, x) => s + x, 0) / (xs.length || 1) };
+    }).sort((a, b) => a.media - b.media);
+    recursos.forEach(({ no }, i) => { pos[no.id] = { x: esq + (i + 0.5) * ((dir - esq) / recursos.length), y: yNivel(0) }; });
+
+    const raio = Math.max(18, Math.min(30, H / 10));
+    const larguraRecurso = ((dir - esq) / Math.max(1, recursos.length)) * 0.92;
+    const vizinhos = new Set([foco]);
+    teia.arestas.forEach((a) => { if (a.de === foco) vizinhos.add(a.para); if (a.para === foco) vizinhos.add(a.de); });
+
+    // Setas (da comida para quem come). As do peixe em foco ficam fortes;
+    // peixe-come-peixe fica fraca; peixe-come-alimento dos outros fica quase apagada.
+    const camadas = { apagada: el('g', {}, svg), fraca: el('g', {}, svg), forte: el('g', {}, svg) };
+    teia.arestas.forEach((a) => {
+      const p1 = pos[a.de], p2 = pos[a.para];
+      if (!p1 || !p2) return;
+      let classe, camada, seta;
+      if (a.para === foco) { classe = 'come'; camada = 'forte'; seta = 'seta-come'; }
+      else if (a.de === foco) { classe = 'comido'; camada = 'forte'; seta = 'seta-comido'; }
+      else if (a.tipo === 'peixe') { classe = 'fraca'; camada = 'fraca'; seta = 'seta-fraca'; }
+      else { classe = 'apagada'; camada = 'apagada'; seta = null; }
+
+      const dx = p2.x - p1.x, dy = p2.y - p1.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const r1 = a.tipo === 'recurso' ? raio * 0.75 : raio;
+      const x1 = p1.x + (dx / d) * r1, y1 = p1.y + (dy / d) * r1;
+      const x2 = p2.x - (dx / d) * (raio + 5), y2 = p2.y - (dy / d) * (raio + 5);
+      const k = Math.abs(dy) < 5 ? -45 * Math.sign(dx || 1) : 16;   // mesmo nível: arco para cima
+      const cx = (x1 + x2) / 2 - (dy / d) * k, cy = (y1 + y2) / 2 + (dx / d) * k;
+      const chave = a.de + '>' + a.para;
+      const attrs = { d: `M${x1},${y1} Q${cx},${cy} ${x2},${y2}`, class: `teia-aresta ${classe}` + (conhecidos.has(chave) || camada === 'apagada' ? '' : ' nova') };
+      if (seta) attrs['marker-end'] = `url(#${seta})`;
+      el('path', attrs, camadas[camada]);
+    });
+
+    // Nós
+    teia.nos.forEach((no) => {
+      const p = pos[no.id];
+      const classes = ['teia-no', no.tipo];
+      if (!conhecidos.has('no:' + no.id)) classes.push('novo');
+      if (foco && !vizinhos.has(no.id)) classes.push('longe');
+      const g = el('g', { class: classes.join(' '), transform: `translate(${p.x},${p.y})` }, svg);
+      if (no.tipo === 'recurso') {
+        const larg = Math.min(raio * 3.4, larguraRecurso);
+        el('rect', { x: -larg / 2, y: -raio * 0.62, width: larg, height: raio * 1.24, rx: 10, fill: no.cor }, g);
+        const t = el('text', { y: 5, 'text-anchor': 'middle', 'font-size': Math.max(10, Math.min(raio * 0.52, larg / 8)) }, g);
+        t.textContent = no.rotulo;
+        t.setAttribute('stroke', 'none'); t.setAttribute('fill', '#fff');
+      } else {
+        const sp = no.especie;
+        const emFoco = no.id === foco;
+        if (emFoco) el('circle', { r: raio + 7, fill: 'rgba(224,161,0,.18)' }, g);
+        el('circle', { r: raio, fill: '#fff', stroke: sp.nativo ? '#0e8f84' : '#d64545', 'stroke-width': emFoco ? 4 : 2.5 }, g);
+        const c = (sp.visual && sp.visual.cor) || '#9fb8c0';
+        const s = raio / 26;
+        el('ellipse', { cx: 3 * s, cy: 0, rx: 14 * s, ry: 7 * s, fill: c }, g);
+        el('path', { d: `M${-10 * s},0 L${-19 * s},${-7 * s} L${-19 * s},${7 * s} z`, fill: c }, g);
+        el('circle', { cx: 11 * s, cy: -2 * s, r: 1.8 * s, fill: '#111' }, g);
+        el('text', { y: no.nivel === 1 ? -raio - 8 : raio + 17, 'text-anchor': 'middle', 'font-size': Math.max(13, raio * 0.6) }, g)
+          .textContent = sp.nome_popular + (sp.nativo ? '' : ' ⚠');
+        el('title', {}, g).textContent = 'Tocar para destacar';
+        g.addEventListener('click', () => { foco = no.id; desenhar(); });
+      }
+    });
+
+    el('text', { x: 14, y: H - 8, class: 'teia-legenda' }, svg)
+      .textContent = 'A seta aponta para quem come';
+
+    conhecidos = new Set([...teia.arestas.map((a) => a.de + '>' + a.para), ...teia.nos.map((n) => 'no:' + n.id)]);
+  }
+
+  // ao redimensionar, redesenha sem repetir as animações de entrada
+  new ResizeObserver(() => desenhar()).observe(svg);
+
+  return { desenhar: atualizar };
+})();
+
+// ======================================================================
+// Avisos, celebração, fim de rodada
+// ======================================================================
+function avisar(texto, tipo = '') {
+  const d = document.createElement('div');
+  d.className = 'aviso ' + tipo;
+  d.textContent = texto;
+  $('#avisos').appendChild(d);
+  while ($('#avisos').children.length > 3) $('#avisos').firstChild.remove();
+  setTimeout(() => { d.classList.add('saindo'); setTimeout(() => d.remove(), 450); }, 3800);
+}
+
+function celebrarMeta() {
+  Som.meta();
+  const f = $('#faixa-meta');
+  f.classList.add('visivel');
+  setTimeout(() => f.classList.remove('visivel'), 3500);
+}
+
+function mostrarFimDeRodada() {
+  if (!estado.rodadaEncerrada) return;
+  const ctx = contexto();
+  const r = avaliarAgora();
+  const x = Regras.explicar(estado.comunidade, ctx);
+  const meta = metaAtual();
+  const venceu = r.saude >= meta;
+  const amb = estado.modo === 'desafio' && estado.ambiente;
+  const ev = estado.evento && estado.evento.ocorreu ? estado.evento : null;
+  if (ev && ev.reagiu) x.positivos.unshift({ icone: ev.def.reacao.icone, texto: ev.def.final.reagiu });
+
+  const negativos = [...x.negativos].sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+  const titulo = venceu ? 'Vocês montaram um rio saudável!' : r.saude >= meta - 15 ? 'Quase lá!' : 'O rio não aguentou…';
+  const resumo = venceu
+    ? (negativos.length ? 'Deu certo, mas ainda dá para melhorar. Vejam o que atrapalhou.' : 'Tudo se encaixou: a cadeia alimentar ficou equilibrada e os peixes nativos estão bem.')
+    : `O que mais pesou → ${negativos[0] ? negativos[0].texto : 'faltaram peixes.'}`;
+
+  const item = (p, ruim) => `<li><span class="rel-icone">${p.icone}</span><span>${esc(p.texto)}</span>${ruim && p.pontos ? `<b class="pontos">−${p.pontos}</b>` : ''}</li>`;
+  const cartaoPeixe = (p) => {
+    const solto = ev && ev.solto === p.sp;
+    return `<div class="rel-peixe ${p.efeito}">
+      <div class="rel-peixe-nome"><b>${esc(p.sp.nome_popular)}</b><small>${esc(p.papel)}${solto ? ' · solto no rio' : ''}</small></div>
+      <ul>${p.bons.map((t) => `<li class="bom">✓ ${esc(t)}</li>`).join('')}${p.ruins.map((t) => `<li class="ruim">✗ ${esc(t)}</li>`).join('')}</ul>
+    </div>`;
+  };
+  const passo = (h) => {
+    const d = h.depois - h.antes;
+    return `<li><span class="rel-icone">${h.icone}</span><span>${esc(h.texto)}${h.detalhe ? ` <small>${esc(h.detalhe)}</small>` : ''}</span>
+      <b class="delta ${d > 0 ? 'sobe' : d < 0 ? 'desce' : ''}">${d > 0 ? '+' : d < 0 ? '−' : '±'}${Math.abs(d)}</b><span class="saude-passo" title="saúde depois">${h.saude}</span></li>`;
+  };
+
+  $('#cartao-final').innerHTML = `
+    <div class="relatorio">
+      <div class="rel-topo">
+        <div>
+          <h2>${titulo}</h2>
+          <p class="rel-resumo">${esc(resumo)}</p>
+          <p class="detalhes">${amb ? `${amb.icone} ${esc(amb.nome)} · ` : ''}meta ${meta}</p>
+        </div>
+        <div class="num" style="color:${corSaude(r.saude)}">${r.saude}</div>
+      </div>
+      <div class="rel-colunas">
+        <section class="rel-caixa bom"><h3>✅ O que ajudou</h3>
+          <ul>${x.positivos.map((p) => item(p, false)).join('') || '<li><span>Nada deu muito certo desta vez.</span></li>'}</ul></section>
+        <section class="rel-caixa ruim"><h3>❌ O que atrapalhou</h3>
+          <ul>${negativos.map((p) => item(p, true)).join('') || '<li><span>Nada! Rio em equilíbrio.</span></li>'}</ul></section>
+      </div>
+      <h3>🐟 Cada peixe</h3>
+      <div class="rel-peixes">${x.peixes.map(cartaoPeixe).join('')}</div>
+      ${estado.historico.length ? `<h3>📜 Como foi a rodada <small class="detalhes">(quanto cada jogada mudou a saúde)</small></h3><ol class="rel-linha">${estado.historico.map(passo).join('')}</ol>` : ''}
+      <details class="rel-criterios"><summary>Ver a nota por critério</summary>
+        <div class="componentes-final">${r.componentes.map((c) =>
+          `<span>${esc(c.rotulo)}</span><span class="mini"><i style="width:${Math.round(c.nota * 100)}%"></i></span><b>${Math.round(c.nota * 100)}</b>`).join('')}</div>
+      </details>
+      <div class="botoes-final">
+        <button class="btn" id="btn-final-nova">${amb ? 'Sortear outro ambiente' : 'Nova rodada'}</button>
+        <button class="btn sec" id="btn-final-inicio">🏠 Início</button>
+      </div>
+    </div>`;
+  $('#sobreposicao').classList.add('aberta');
+  $('#cartao-final').scrollTop = 0;
+  $('#btn-final-nova').addEventListener('click', novaRodada);
+  $('#btn-final-inicio').addEventListener('click', mostrarInicio);
+  if (venceu) Som.meta();
+}
+
+// ======================================================================
+// Som (Web Audio, sem arquivos)
+// ======================================================================
+const Som = (() => {
+  let ac = null;
+  const garantir = () => { if (!ac) try { ac = new AudioContext(); } catch (_) {} return ac; };
+  ['click', 'keydown'].forEach((ev) => addEventListener(ev, garantir, { once: true }));
+  function nota(freq, ini, dur, tipo = 'sine', vol = 0.15, ate) {
+    if (!estado.som || !garantir()) return;
+    const t = ac.currentTime + ini;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = tipo; o.frequency.setValueAtTime(freq, t);
+    if (ate) o.frequency.exponentialRampToValueAtTime(ate, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
+  }
+  return {
+    entrada: () => { nota(320, 0, 0.25, 'sine', 0.2, 900); nota(1200, 0.15, 0.15, 'sine', 0.06); },
+    ruim: () => { nota(300, 0, 0.35, 'triangle', 0.18, 140); },
+    erro: () => { nota(180, 0, 0.18, 'square', 0.06); nota(150, 0.18, 0.2, 'square', 0.06); },
+    meta: () => { [523, 659, 784, 1047].forEach((f, i) => nota(f, i * 0.12, 0.4, 'triangle', 0.14)); },
+    tique: () => { nota(900, 0, 0.04, 'square', 0.03); }
+  };
+})();
+
+// ======================================================================
+// Simulação e atalhos
+// ======================================================================
+const TECLAS_PEIXES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'q', 'w', 'e', 't'];
+
+function montarBotoesSimulacao() {
+  const caixa = $('#botoes-simulacao');
+  caixa.querySelectorAll('button').forEach((b) => b.remove());
+  estado.especies.forEach((sp, i) => {
+    const b = document.createElement('button');
+    b.className = 'peixe';
+    b.dataset.i = i;
+    const tecla = TECLAS_PEIXES[i] || '';
+    b.innerHTML = (tecla ? `<kbd>${tecla}</kbd>` : '') + esc(sp.nome_popular);
+    if (!sp.nativo) b.classList.add('exotica');
+    b.addEventListener('click', () => tocarPeixe([].concat(sp.uid)[0]));
+    caixa.appendChild(b);
+  });
+}
+
+function alternarSimulacao(forcar) {
+  const ativo = document.body.classList.toggle('modo-simulacao', forcar);
+  $('#btn-simulacao').setAttribute('aria-pressed', ativo);
+  try { localStorage.setItem('reconhecendo-rio:simulacao', ativo ? '1' : '0'); } catch (_) {}
+}
+
+$('#btn-conectar').addEventListener('click', () => Leitor.alternar());
+$('#btn-simulacao').addEventListener('click', () => alternarSimulacao());
+$('#btn-nova').addEventListener('click', novaRodada);
+$('#btn-inicio').addEventListener('click', mostrarInicio);
+$('#btn-reagir').addEventListener('click', reagir);
+document.querySelectorAll('#inicio .modo').forEach((b) => b.addEventListener('click', () => iniciarModo(b.dataset.modo)));
+$('#btn-tela').addEventListener('click', telaCheia);
+$('#sim-desconhecido').addEventListener('click', () => tocarPeixe('04DEADBEEF00'));
+$('#sim-desfazer').addEventListener('click', desfazer);
+$('#sim-copiar').addEventListener('click', () => {
+  const t = $('#ultimo-uid').textContent;
+  if (t && t !== '—') navigator.clipboard?.writeText(t).then(() => avisar('UID copiado: ' + t, 'info'));
+});
+$('#sim-uid').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.value.trim()) { tocarPeixe(e.target.value.trim()); e.target.value = ''; }
+  e.stopPropagation();
+});
+
+function telaCheia() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen?.().catch(() => {});
+}
+
+addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  const k = e.key.toLowerCase();
+  const sim = document.body.classList.contains('modo-simulacao');
+  if (!estado.modo && ['1', '2', '3'].includes(k)) iniciarModo(['livre', 'desafio', 'explorar'][+k - 1]);
+  else if (sim && TECLAS_PEIXES.includes(k)) {
+    const sp = estado.especies[TECLAS_PEIXES.indexOf(k)];
+    if (sp) tocarPeixe([].concat(sp.uid)[0]);
+  } else if (sim && k === 'u') tocarPeixe('04DEADBEEF00');
+  else if (sim && k === 'backspace') desfazer();
+  else if (k === 's') alternarSimulacao();
+  else if (k === 'n') novaRodada();
+  else if (k === 'i') mostrarInicio();
+  else if (k === 'p') reagir();
+  else if (k === 'r') { document.body.classList.toggle('modo-revisao'); avisar(document.body.classList.contains('modo-revisao') ? 'Modo revisão: dados a validar visíveis' : 'Modo revisão desligado', 'info'); }
+  else if (k === 'm') { estado.som = !estado.som; avisar(estado.som ? 'Som ligado' : 'Som desligado', 'info'); }
+  else if (k === 'f') telaCheia();
+  else return;
+  e.preventDefault();
+});
+
+// ======================================================================
+// Início
+// ======================================================================
+(function iniciar() {
+  const params = new URLSearchParams(location.search);
+  if (params.has('revisao')) document.body.classList.add('modo-revisao');
+  let sim = null;
+  try { sim = localStorage.getItem('reconhecendo-rio:simulacao'); } catch (_) {}
+  const temSerial = Leitor.iniciar();
+  // sem leitor possível (navegador sem Web Serial ou página embutida): começa na simulação
+  const embutida = window.top !== window;
+  alternarSimulacao(params.has('simulacao') || sim === '1' || ((!temSerial || embutida) && sim !== '0'));
+  atualizarCabecalho();
+  carregarEspecies();
+})();
+</script>
+</body>
+</html>

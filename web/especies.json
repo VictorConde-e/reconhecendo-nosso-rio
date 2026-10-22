@@ -8,7 +8,7 @@
     "porte: pequeno | medio | grande. Usado na teia alimentar: um piscívoro só come peixes de porte menor que o dele.",
     "come: opcional. Substitui a dieta padrão da guilda. Itens: algas, detritos, insetos, frutos, peixes.",
     "validar: true = dado biológico que ainda precisa da revisão do biólogo. notas_validacao diz o que conferir.",
-    "visual: só aparência no jogo (cor, forma, coluna d'água). Não é dado biológico.",
+    "visual: só aparência no jogo (cor, forma, coluna d'água, barbilhao). Não é dado biológico.",
     "por_que_tenta: só para exóticas 'tentadoras'; aparece na mensagem quando o peixe entra.",
     "ambientes: onde a espécie vive bem (cabeceira | planicie | brejo | represa), usado no modo Desafio. Ver ambientes.js.",
     "sofre_com: eventos do Desafio que esta espécie não aguenta (desmatamento | esgoto | seca). Ver ambientes.js.",
@@ -249,7 +249,7 @@
       "visual": {
         "cor": "#a68a5b",
         "detalhe": "#5b4a2f",
-        "forma": "enguia",
+        "forma": "anguiliforme",
         "coluna": "fundo"
       }
     },
@@ -455,7 +455,7 @@
       "visual": {
         "cor": "#6e5a3a",
         "detalhe": "#3b2e1c",
-        "forma": "enguia",
+        "forma": "anguiliforme",
         "coluna": "fundo"
       }
     },
@@ -582,7 +582,8 @@
         "cor": "#4f4c48",
         "detalhe": "#262422",
         "forma": "bagre",
-        "coluna": "fundo"
+        "coluna": "fundo",
+        "barbilhao": true
       }
     }
   ]

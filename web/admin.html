@@ -176,7 +176,7 @@ const CHAVE_RASCUNHO = 'reconhecendo-rio:rascunho-admin';
 const CHAVE_GH = 'reconhecendo-rio:github';
 
 const STATUS = { LC: 'Pouco preocupante', NT: 'Quase ameaçada', VU: 'Vulnerável', EN: 'Em perigo', CR: 'Criticamente em perigo', DD: 'Dados insuficientes', NE: 'Não avaliada' };
-const FORMAS = ['fusiforme', 'alto', 'alongado', 'achatado', 'bagre', 'enguia', 'gobio'];
+const FORMAS = Peixe.FORMAS;
 const COLUNAS = { superficie: 'Superfície', meio: 'Meio', fundo: 'Fundo' };
 const PORTES = { pequeno: 'Pequeno', medio: 'Médio', grande: 'Grande' };
 // ordem dos campos no arquivo (campos desconhecidos são mantidos no fim)
@@ -498,7 +498,9 @@ function formulario() {
   </div></fieldset>
 
   <fieldset><legend>Aparência no jogo</legend><div class="grade">
-    <label class="campo"><span>Forma</span>${select('visual.forma', Object.fromEntries(FORMAS.map((f) => [f, f])))}</label>
+    <label class="campo"><span>Forma</span>${select('visual.forma', Object.fromEntries(FORMAS.map((f) => [f, f])))}
+      <small>anguiliforme: corpo de cobra (muçum, cambeva) · tuvira: peixe-elétrico, só nadadeira anal</small></label>
+    <label class="bool"><input type="checkbox" id="chk-barbilhao"> Barbilhão</label>
     <label class="campo"><span>Onde nada</span>${select('visual.coluna', COLUNAS)}</label>
     <div class="campo"><span>Cores</span><div class="cores">
       <label>Corpo <input type="color" data-campo="visual.cor"></label>
@@ -568,6 +570,16 @@ function selecionar(i) {
     copia.nome_cientifico = (e.nome_cientifico || '') + ' (cópia)';
     copia.uid = proximoUidSim();
     especies.splice(i + 1, 0, copia); mudou(); selecionar(i + 1);
+  });
+  // barbilhão: segue o formato (bagre já vem com) até alguém marcar ou desmarcar
+  const chk = $('#chk-barbilhao');
+  chk.checked = Peixe.temBarbilhao(e.visual || {});
+  chk.addEventListener('change', () => { e.visual = e.visual || {}; e.visual.barbilhao = chk.checked; atualizarEspecie(); });
+  $('[data-campo="visual.forma"]').addEventListener('change', (ev) => {
+    e.visual = e.visual || {};
+    e.visual.barbilhao = ev.target.value === 'bagre';
+    chk.checked = e.visual.barbilhao;
+    atualizarEspecie();
   });
   $('#btn-subir').addEventListener('click', () => mover(i, -1));
   $('#btn-descer').addEventListener('click', () => mover(i, +1));

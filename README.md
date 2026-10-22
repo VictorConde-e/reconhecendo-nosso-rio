@@ -14,6 +14,8 @@ reconhecendo-nosso-rio/
 │   └── LIGACAO.md       pinos, LED e dicas para embutir a tag no peixe
 └── web/
     ├── index.html       interface do jogo (abrir no Chrome/Edge)
+    ├── admin.html       painel admin: editar espécies, descrições e UIDs
+    ├── peixe.js         desenho dos peixes (usado pelo jogo e pelo painel)
     ├── regras.js        pontuação, fácil de editar
     ├── ambientes.js     ambientes do Desafio e o evento "Desmataram a margem!"
     ├── especies.json    tabela UID -> espécie (revisar!)
@@ -108,6 +110,20 @@ Feche o monitor serial e clique em **Conectar leitor** na página. Na próxima v
 `web/especies.json` tem 14 espécies candidatas: 11 nativas (4 delas predadoras: traíra, saicanga, jacundá e muçum) e 3 exóticas (tilápia, tucunaré e bagre-africano). Toda entrada com `"validar": true` traz uma `notas_validacao` dizendo o que conferir, como ocorrência na bacia, taxonomia, categoria de ameaça ou nome popular local. Só **acará** está como `validar: false`. Os status de ameaça incertos estão como `NE` (não avaliada), não como chute.
 
 Os campos que o jogo usa para pontuar são `guilda_trofica`, `habitat`, `porte`, `come`, `nativo`, `endemico`, `migrador` e `status_ameaca`. O bloco `visual` é só a aparência do desenho.
+
+## Painel admin (`web/admin.html`)
+
+Abre pela tela inicial do jogo (⚙️ Painel admin). Lá dá para editar todas as espécies num formulário: nomes, UIDs, guilda, porte, dieta, habitats, ambientes, eventos, textos da ficha, fotos, cores e notas de validação. Ele também:
+- avisa erros, como UID repetido, nome científico repetido ou falta de guilda, e não deixa salvar com erro;
+- **📡 Ler do leitor:** conecta o leitor NFC e coloca o UID do peixe encostado na espécie aberta;
+- **▶ Testar no jogo:** abre o jogo com o rascunho, só no seu navegador, antes de salvar;
+- guarda o rascunho no navegador enquanto você edita.
+
+Há duas formas de salvar:
+1. **⬇ Baixar especies.json:** substitua o arquivo `web/especies.json` do projeto. No GitHub, abra o arquivo, clique em editar ou arraste o arquivo novo.
+2. **☁ Salvar no GitHub:** faz o commit direto pela API do GitHub, inclusive com o site no GitHub Pages. Precisa de um *token* pessoal *fine-grained* com acesso só a este repositório e a permissão **Contents: Read and write**. Crie em github.com/settings/personal-access-tokens/new. O token fica só no navegador, e só fica guardado se você marcar "lembrar". O Pages leva 1 ou 2 minutos para atualizar. O cache do navegador pode segurar a versão antiga por até 10 minutos; se acontecer, recarregue com Ctrl+F5.
+
+Qualquer pessoa pode abrir o painel, mas sem o token ninguém consegue alterar o repositório.
 
 ## Relatório do fim da rodada
 

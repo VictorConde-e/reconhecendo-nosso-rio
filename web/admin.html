@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel das espécies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fundo: #ffffff;
+    --painel: #f4f8f9;
+    --borda: #d8e5e9;
+    --texto: #12313a;
+    --suave: #5b7c85;
+    --destaque: #0e8f84;
+    --destaque-claro: #e1f4f1;
+    --aviso: #f4b400;
+    --aviso-claro: #fff4cc;
+    --erro: #d64545;
+    --erro-claro: #fde8e8;
+    --ok: #2e9e4f;
+    --fonte-titulo: "Baloo 2", "Nunito", system-ui, sans-serif;
+    --fonte: "Nunito", system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--fundo); color: var(--texto); font: 15px/1.4 var(--fonte); display: flex; flex-direction: column; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+
+  header { display: flex; align-items: center; gap: .5rem; padding: .6rem 1rem; border-bottom: 1px solid var(--borda); flex-wrap: wrap; }
+  .marca { margin-right: auto; line-height: 1.05; }
+  .marca small { color: var(--destaque); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: .72rem; }
+  .marca h1 { margin: 0; font-family: var(--fonte-titulo); font-size: 1.5rem; }
+  .btn { border: 1px solid transparent; border-radius: 10px; padding: .45rem .8rem; background: var(--destaque); color: #fff; font-weight: 800; white-space: nowrap; }
+  .btn.sec { background: var(--painel); color: var(--texto); border-color: var(--borda); }
+  .btn.perigo { background: #fff; color: var(--erro); border-color: #efc2c2; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .chip { padding: .25rem .7rem; border-radius: 999px; font-weight: 800; font-size: .85rem; background: var(--painel); border: 1px solid var(--borda); white-space: nowrap; }
+  .chip.sujo { background: var(--aviso-claro); border-color: #f0d68a; }
+  .chip.salvo { background: var(--destaque-claro); border-color: #b9e3dd; }
+
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr); }
+  aside { border-right: 1px solid var(--borda); display: flex; flex-direction: column; min-height: 0; background: var(--painel); }
+  .busca { padding: .7rem; display: flex; gap: .4rem; }
+  .busca input { flex: 1; min-width: 0; padding: .45rem .7rem; border: 1px solid var(--borda); border-radius: 10px; background: #fff; }
+  #lista { list-style: none; margin: 0; padding: 0 .5rem .7rem; overflow-y: auto; flex: 1; }
+  #lista li { display: flex; align-items: center; gap: .5rem; padding: .45rem .6rem; border-radius: 10px; cursor: pointer; border: 1px solid transparent; }
+  #lista li:hover { background: #fff; }
+  #lista li.ativo { background: #fff; border-color: var(--destaque); }
+  #lista canvas { flex: none; }
+  #lista .nome { font-weight: 800; line-height: 1.1; }
+  #lista .cient { font-size: .8rem; color: var(--suave); font-style: italic; }
+  #lista .marcas { margin-left: auto; display: flex; gap: .2rem; font-size: .8rem; }
+  .tag { padding: .05rem .4rem; border-radius: 6px; font-weight: 800; font-size: .72rem; }
+  .tag.exo { background: var(--erro-claro); color: #8e2b2b; }
+  .tag.val { background: var(--aviso-claro); color: #6b5200; }
+  .tag.err { background: var(--erro); color: #fff; }
+  .lista-rodape { padding: .6rem .7rem; border-top: 1px solid var(--borda); display: flex; gap: .4rem; flex-wrap: wrap; }
+
+  #editor { overflow-y: auto; padding: 1rem 1.4rem 4rem; }
+  .vazio { color: var(--suave); text-align: center; margin-top: 4rem; font-size: 1.1rem; }
+  .previa { display: flex; align-items: center; gap: 1rem; margin-bottom: .8rem; }
+  .previa h2 { margin: 0; font-family: var(--fonte-titulo); font-size: 2rem; line-height: 1; }
+  .previa .cient { color: var(--suave); font-style: italic; }
+  .acoes-especie { margin-left: auto; display: flex; gap: .4rem; flex-wrap: wrap; }
+  #problemas { list-style: none; margin: 0 0 .8rem; padding: 0; display: flex; flex-direction: column; gap: .3rem; }
+  #problemas li { padding: .35rem .7rem; border-radius: 10px; font-weight: 700; font-size: .92rem; }
+  #problemas li.erro { background: var(--erro-claro); color: #8e2b2b; }
+  #problemas li.aviso { background: var(--aviso-claro); color: #6b5200; }
+
+  fieldset { border: 1px solid var(--borda); border-radius: 14px; padding: .6rem 1rem 1rem; margin: 0 0 1rem; }
+  legend { font-family: var(--fonte-titulo); font-weight: 800; font-size: 1.1rem; padding: 0 .4rem; }
+  .grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .7rem 1rem; }
+  .campo { display: flex; flex-direction: column; gap: .2rem; }
+  .campo.largo { grid-column: 1 / -1; }
+  .campo > span { font-weight: 800; font-size: .85rem; }
+  .campo small { color: var(--suave); font-size: .78rem; }
+  .campo input[type=text], .campo input[type=url], .campo select, .campo textarea {
+    padding: .45rem .6rem; border: 1px solid var(--borda); border-radius: 9px; background: #fff; width: 100%;
+  }
+  .campo textarea { min-height: 4.5rem; resize: vertical; }
+  .campo input:focus, .campo select:focus, .campo textarea:focus { outline: 2px solid var(--destaque); outline-offset: 0; border-color: var(--destaque); }
+  .checks { display: flex; flex-wrap: wrap; gap: .35rem .9rem; padding-top: .15rem; }
+  .checks label, .bool { display: inline-flex; align-items: center; gap: .35rem; font-weight: 600; }
+  .linha-uid { display: flex; gap: .4rem; }
+  .linha-uid input { flex: 1; }
+  .contador { align-self: flex-end; }
+  .contador.longo { color: var(--erro); font-weight: 800; }
+  .cores { display: flex; gap: .8rem; align-items: center; }
+  .cores input[type=color] { width: 3rem; height: 2.2rem; border: 1px solid var(--borda); border-radius: 8px; padding: 2px; background: #fff; }
+
+  dialog { border: 1px solid var(--borda); border-radius: 18px; padding: 1.3rem 1.6rem; max-width: 34rem; width: calc(100% - 2rem); }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  dialog h2 { margin: 0 0 .4rem; font-family: var(--fonte-titulo); }
+  dialog .grade { grid-template-columns: 1fr 1fr; }
+  dialog .botoes { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1rem; }
+  #gh-status { margin-top: .6rem; font-weight: 700; }
+  #gh-status.erro { color: var(--erro); }
+  #gh-status.ok { color: var(--ok); }
+  .nota { background: var(--painel); border-radius: 10px; padding: .5rem .7rem; font-size: .88rem; color: var(--suave); }
+
+  #avisos { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: .4rem; z-index: 10; pointer-events: none; }
+  .aviso { background: var(--texto); color: #fff; padding: .55rem 1rem; border-radius: 12px; font-weight: 700; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+  .aviso.erro { background: var(--erro); }
+
+  @media (max-width: 800px) {
+    main { grid-template-columns: 1fr; grid-template-rows: 40vh auto; }
+    body { height: auto; }
+    aside { border-right: 0; border-bottom: 1px solid var(--borda); }
+    dialog .grade { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca">
+    <small>Re-conhecendo nosso rio · Painel admin</small>
+    <h1>Espécies do jogo</h1>
+  </div>
+  <span class="chip" id="estado-arquivo">Carregando…</span>
+  <button class="btn sec" id="btn-abrir" title="Abrir um especies.json do computador">📂 Abrir arquivo</button>
+  <button class="btn sec" id="btn-leitor" title="Conectar o leitor NFC para ler os UIDs dos peixes">📡 Conectar leitor</button>
+  <button class="btn sec" id="btn-testar" title="Abre o jogo usando este rascunho, só neste navegador">▶ Testar no jogo</button>
+  <button class="btn sec" id="btn-baixar">⬇ Baixar especies.json</button>
+  <button class="btn" id="btn-github">☁ Salvar no GitHub</button>
+  <a class="btn sec" href="index.html" style="text-decoration:none">← Jogo</a>
+</header>
+
+<main>
+  <aside>
+    <div class="busca"><input id="busca" type="search" placeholder="Buscar espécie…" aria-label="Buscar espécie"></div>
+    <ul id="lista"></ul>
+    <div class="lista-rodape">
+      <button class="btn" id="btn-nova">＋ Nova espécie</button>
+      <button class="btn sec" id="btn-desfazer-tudo" title="Volta para a versão carregada do arquivo">↺ Descartar mudanças</button>
+    </div>
+  </aside>
+  <section id="editor"><p class="vazio">Escolha uma espécie na lista.</p></section>
+</main>
+
+<input type="file" id="arquivo" accept=".json,application/json" hidden>
+
+<dialog id="dlg-github">
+  <h2>Salvar no GitHub</h2>
+  <p class="nota">Faz um commit do <code>especies.json</code> direto no repositório. Se o jogo estiver no GitHub Pages, ele atualiza sozinho em 1 ou 2 minutos.</p>
+  <div class="grade" style="margin-top:.7rem">
+    <label class="campo"><span>Dono (usuário)</span><input type="text" id="gh-dono"></label>
+    <label class="campo"><span>Repositório</span><input type="text" id="gh-repo"></label>
+    <label class="campo"><span>Branch</span><input type="text" id="gh-branch"></label>
+    <label class="campo"><span>Caminho do arquivo</span><input type="text" id="gh-caminho"></label>
+    <label class="campo largo"><span>Token do GitHub</span><input type="password" id="gh-token" autocomplete="off" placeholder="github_pat_…">
+      <small>Crie em <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>: em <i>Repository access</i> escolha só este repositório e em <i>Permissions → Contents</i> marque <b>Read and write</b>. O token nunca vai para o repositório.</small></label>
+    <label class="bool largo"><input type="checkbox" id="gh-lembrar"> Lembrar o token neste navegador (só use no seu computador)</label>
+    <label class="campo largo"><span>Mensagem do commit</span><input type="text" id="gh-msg"></label>
+  </div>
+  <div id="gh-status"></div>
+  <div class="botoes">
+    <button class="btn sec" id="gh-cancelar">Fechar</button>
+    <button class="btn" id="gh-salvar">Salvar no GitHub</button>
+  </div>
+</dialog>
+
+<div id="avisos" aria-live="polite"></div>
+
+<script src="regras.js"></script>
+<script src="ambientes.js"></script>
+<script src="peixe.js"></script>
+<script>
+'use strict';
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const CHAVE_RASCUNHO = 'reconhecendo-rio:rascunho-admin';
+const CHAVE_GH = 'reconhecendo-rio:github';
+
+const STATUS = { LC: 'Pouco preocupante', NT: 'Quase ameaçada', VU: 'Vulnerável', EN: 'Em perigo', CR: 'Criticamente em perigo', DD: 'Dados insuficientes', NE: 'Não avaliada' };
+const FORMAS = ['fusiforme', 'alto', 'alongado', 'achatado', 'bagre', 'enguia', 'gobio'];
+const COLUNAS = { superficie: 'Superfície', meio: 'Meio', fundo: 'Fundo' };
+const PORTES = { pequeno: 'Pequeno', medio: 'Médio', grande: 'Grande' };
+// ordem dos campos no arquivo (campos desconhecidos são mantidos no fim)
+const ORDEM = ['uid', 'nome_popular', 'nome_cientifico', 'guilda_trofica', 'dieta', 'habitat', 'ambientes', 'sofre_com',
+  'migrador', 'status_ameaca', 'nativo', 'endemico', 'tentador', 'por_que_tenta', 'porte', 'come', 'descricao_curta',
+  'imagem', 'foto', 'foto_busca', 'foto_arquivo', 'foto_credito', 'foto_licenca', 'foto_fonte', 'validar', 'notas_validacao', 'visual'];
+
+const estado = { dados: null, original: '', atual: -1, sujo: false, filtro: '' };
+
+// ======================================================================
+// Carregar / salvar
+// ======================================================================
+async function carregar() {
+  let rascunho = null;
+  try { rascunho = localStorage.getItem(CHAVE_RASCUNHO); } catch (_) {}
+  let carregou = false;
+  try {
+    const r = await fetch('especies.json', { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    usar(await r.json());
+    carregou = true;
+  } catch (_) { /* file:// bloqueia o fetch */ }
+  if (!carregou && !rascunho) { avisar('Não consegui ler especies.json sozinho. Use "Abrir arquivo".', 'erro'); return; }
+  if (!carregou) {
+    usar(JSON.parse(rascunho));
+    avisar('Abrindo o último rascunho salvo neste navegador.');
+  } else if (rascunho && rascunho !== estado.original && confirm('Há um rascunho não salvo deste painel no navegador. Quer continuar de onde parou?')) {
+    estado.dados = JSON.parse(rascunho);
+    estado.sujo = true;
+  }
+  renderLista();
+  selecionar(0);
+  marcarEstado();
+}
+
+function usar(json) {
+  if (!Array.isArray(json.especies)) json = { especies: Array.isArray(json) ? json : [] };
+  estado.dados = json;
+  estado.original = serializar();   // compara sempre com a versão normalizada (mesma ordem de campos)
+  estado.sujo = false;
+}
+
+function serializar() {
+  const dados = { ...estado.dados, especies: estado.dados.especies.map(ordenar) };
+  return JSON.stringify(dados, null, 2) + '\n';
+}
+
+function ordenar(e) {
+  const o = {};
+  ORDEM.forEach((k) => { if (e[k] !== undefined) o[k] = e[k]; });
+  Object.keys(e).forEach((k) => { if (!(k in o)) o[k] = e[k]; });
+  return o;
+}
+
+function mudou() {
+  estado.sujo = serializar() !== estado.original;
+  try { localStorage.setItem(CHAVE_RASCUNHO, serializar()); } catch (_) {}
+  marcarEstado();
+}
+
+function marcarEstado() {
+  const el = $('#estado-arquivo');
+  if (!estado.dados) return;
+  const n = estado.dados ? estado.dados.especies.length : 0;
+  const erros = estado.dados ? estado.dados.especies.filter((e, i) => problemas(e, i).some((p) => p.tipo === 'erro')).length : 0;
+  el.textContent = (estado.sujo ? '● Alterações não salvas' : '✓ Igual ao arquivo') + ` · ${n} espécies` + (erros ? ` · ${erros} com erro` : '');
+  el.className = 'chip ' + (estado.sujo ? 'sujo' : 'salvo');
+}
+
+addEventListener('beforeunload', (ev) => { if (estado.sujo) { ev.preventDefault(); ev.returnValue = ''; } });
+
+$('#btn-abrir').addEventListener('click', () => $('#arquivo').click());
+$('#arquivo').addEventListener('change', async (ev) => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  try {
+    usar(JSON.parse(await f.text()));
+    renderLista(); selecionar(0); marcarEstado();
+    avisar(`Arquivo "${f.name}" carregado.`);
+  } catch (e) { avisar('Arquivo inválido: ' + e.message, 'erro'); }
+  ev.target.value = '';
+});
+
+$('#btn-baixar').addEventListener('click', () => {
+  const blob = new Blob([serializar()], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'especies.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  avisar('Arquivo baixado. Substitua o web/especies.json do projeto por ele.');
+});
+
+$('#btn-testar').addEventListener('click', () => {
+  try { localStorage.setItem(CHAVE_RASCUNHO, serializar()); } catch (_) {}
+  window.open('index.html?simulacao&rascunho', '_blank');
+});
+
+$('#btn-desfazer-tudo').addEventListener('click', () => {
+  if (!estado.sujo || !confirm('Descartar todas as mudanças e voltar para o arquivo carregado?')) return;
+  estado.dados = JSON.parse(estado.original);
+  try { localStorage.removeItem(CHAVE_RASCUNHO); } catch (_) {}
+  estado.sujo = false;
+  renderLista(); selecionar(Math.min(estado.atual, estado.dados.especies.length - 1)); marcarEstado();
+});
+
+// ======================================================================
+// Salvar no GitHub (API de conteúdo: um commit por salvamento)
+// ======================================================================
+function configGH() {
+  let c = {};
+  try { c = JSON.parse(localStorage.getItem(CHAVE_GH) || '{}'); } catch (_) {}
+  // no GitHub Pages dá para adivinhar dono e repositório pelo endereço
+  const m = location.hostname.match(/^([^.]+)\.github\.io$/);
+  const repoDoEndereco = location.pathname.split('/').filter(Boolean)[0];
+  return {
+    dono: c.dono || (m ? m[1] : 'VictorConde-e'),
+    repo: c.repo || (m && repoDoEndereco ? repoDoEndereco : 'reconhecendo-nosso-rio'),
+    branch: c.branch || 'main',
+    caminho: c.caminho || 'web/especies.json',
+    token: c.token || ''
+  };
+}
+
+$('#btn-github').addEventListener('click', () => {
+  const c = configGH();
+  $('#gh-dono').value = c.dono; $('#gh-repo').value = c.repo; $('#gh-branch').value = c.branch;
+  $('#gh-caminho').value = c.caminho; $('#gh-token').value = c.token; $('#gh-lembrar').checked = !!c.token;
+  $('#gh-msg').value = `Atualiza espécies pelo painel admin`;
+  $('#gh-status').textContent = ''; $('#gh-status').className = '';
+  $('#dlg-github').showModal();
+});
+$('#gh-cancelar').addEventListener('click', () => $('#dlg-github').close());
+
+function base64Utf8(texto) {
+  const bytes = new TextEncoder().encode(texto);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+$('#gh-salvar').addEventListener('click', async () => {
+  const c = { dono: $('#gh-dono').value.trim(), repo: $('#gh-repo').value.trim(), branch: $('#gh-branch').value.trim() || 'main',
+              caminho: $('#gh-caminho').value.trim().replace(/^\/+/, ''), token: $('#gh-token').value.trim() };
+  const st = $('#gh-status');
+  const erroBloqueante = estado.dados.especies.some((e, i) => problemas(e, i).some((p) => p.tipo === 'erro'));
+  if (erroBloqueante) { st.textContent = 'Há espécies com erro (em vermelho na lista). Corrija antes de salvar.'; st.className = 'erro'; return; }
+  if (!c.token) { st.textContent = 'Cole o token do GitHub.'; st.className = 'erro'; return; }
+  try { localStorage.setItem(CHAVE_GH, JSON.stringify({ ...c, token: $('#gh-lembrar').checked ? c.token : '' })); } catch (_) {}
+
+  const url = `https://api.github.com/repos/${encodeURIComponent(c.dono)}/${encodeURIComponent(c.repo)}/contents/${c.caminho.split('/').map(encodeURIComponent).join('/')}`;
+  const cab = { Authorization: `Bearer ${c.token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+  $('#gh-salvar').disabled = true;
+  st.textContent = 'Salvando…'; st.className = '';
+  try {
+    // pega o "sha" da versão atual (obrigatório para atualizar um arquivo que já existe)
+    let sha;
+    const atual = await fetch(`${url}?ref=${encodeURIComponent(c.branch)}`, { headers: cab, cache: 'no-store' });
+    if (atual.ok) sha = (await atual.json()).sha;
+    else if (atual.status !== 404) throw new Error(await mensagemErro(atual));
+    const r = await fetch(url, {
+      method: 'PUT', headers: cab,
+      body: JSON.stringify({ message: $('#gh-msg').value || 'Atualiza espécies pelo painel admin', content: base64Utf8(serializar()), branch: c.branch, sha })
+    });
+    if (!r.ok) throw new Error(await mensagemErro(r));
+    const res = await r.json();
+    estado.original = serializar(); estado.sujo = false;
+    try { localStorage.removeItem(CHAVE_RASCUNHO); } catch (_) {}
+    marcarEstado();
+    st.innerHTML = `✓ Salvo! <a href="${esc(res.commit.html_url)}" target="_blank" rel="noopener">Ver o commit</a>. O GitHub Pages atualiza em 1 ou 2 minutos.`;
+    st.className = 'ok';
+  } catch (e) {
+    st.textContent = 'Não consegui salvar: ' + e.message; st.className = 'erro';
+  } finally {
+    $('#gh-salvar').disabled = false;
+  }
+});
+
+async function mensagemErro(r) {
+  let msg = '';
+  try { msg = (await r.json()).message; } catch (_) {}
+  if (r.status === 401) return 'token inválido ou expirado.';
+  if (r.status === 403) return 'o token não tem permissão de escrita (Contents: Read and write) neste repositório.';
+  if (r.status === 404) return 'repositório, branch ou caminho não encontrado (ou o token não tem acesso a ele).';
+  if (r.status === 409) return 'o arquivo mudou no GitHub enquanto você editava. Recarregue a página e tente de novo.';
+  return `${r.status} ${msg}`;
+}
+
+// ======================================================================
+// Validação
+// ======================================================================
+const uidsDe = (e) => [].concat(e.uid || []).map((u) => String(u).toUpperCase().trim()).filter(Boolean);
+
+function problemas(e, i) {
+  const lista = [];
+  const outras = estado.dados.especies.filter((_, j) => j !== i);
+  const erro = (t) => lista.push({ tipo: 'erro', texto: t });
+  const aviso = (t) => lista.push({ tipo: 'aviso', texto: t });
+  if (!uidsDe(e).length) erro('Sem UID: o jogo não vai reconhecer este peixe.');
+  uidsDe(e).forEach((u) => { const d = outras.find((o) => uidsDe(o).includes(u)); if (d) erro(`UID ${u} repetido: também está em ${d.nome_popular}.`); });
+  if (!e.nome_popular) erro('Falta o nome popular.');
+  if (!e.nome_cientifico) erro('Falta o nome científico (ele também identifica o peixe na teia).');
+  else if (outras.some((o) => o.nome_cientifico === e.nome_cientifico)) erro('Nome científico repetido: a teia alimentar vai confundir as duas espécies.');
+  if (!Regras.GUILDAS[e.guilda_trofica]) erro('Escolha a guilda trófica.');
+  if (!(e.habitat || []).length) aviso('Nenhum habitat marcado.');
+  if (!(e.ambientes || []).length) aviso('Não vive bem em nenhum ambiente do Desafio: sempre vai "morrer" lá.');
+  if (e.guilda_trofica === 'piscivoro' && e.come && !e.come.includes('peixes')) aviso('É piscívoro, mas a dieta marcada não inclui "peixes".');
+  if ((e.descricao_curta || '').length > 220) aviso('Descrição longa: pode não caber na ficha em telas menores.');
+  if (!e.nativo && e.tentador && !e.por_que_tenta) aviso('Exótico "tentador" sem o motivo de parecer boa ideia.');
+  if (e.validar) aviso('Marcado para validar' + (e.notas_validacao ? `: ${e.notas_validacao}` : '.'));
+  return lista;
+}
+
+// ======================================================================
+// Lista
+// ======================================================================
+function miniPeixe(e, w = 54, h = 30) {
+  const c = document.createElement('canvas');
+  const dpr = devicePixelRatio || 1;
+  c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
+  const g = c.getContext('2d');
+  g.scale(dpr, dpr); g.translate(w / 2, h / 2);
+  Peixe.desenhar(g, e, w * 0.78, 0);
+  return c;
+}
+
+function renderLista() {
+  const ul = $('#lista');
+  ul.replaceChildren();
+  const f = estado.filtro.toLowerCase();
+  estado.dados.especies.forEach((e, i) => {
+    if (f && !`${e.nome_popular} ${e.nome_cientifico} ${uidsDe(e).join(' ')}`.toLowerCase().includes(f)) return;
+    const ps = problemas(e, i);
+    const li = document.createElement('li');
+    li.className = i === estado.atual ? 'ativo' : '';
+    li.appendChild(miniPeixe(e));
+    const txt = document.createElement('div');
+    txt.innerHTML = `<div class="nome">${esc(e.nome_popular || '(sem nome)')}</div><div class="cient">${esc(e.nome_cientifico || '')}</div>`;
+    li.appendChild(txt);
+    const m = document.createElement('div');
+    m.className = 'marcas';
+    m.innerHTML = (ps.some((p) => p.tipo === 'erro') ? '<span class="tag err">erro</span>' : '') +
+                  (!e.nativo ? '<span class="tag exo">exótico</span>' : '') +
+                  (e.validar ? '<span class="tag val" title="Dado a validar">validar</span>' : '');
+    li.appendChild(m);
+    li.addEventListener('click', () => selecionar(i));
+    ul.appendChild(li);
+  });
+}
+$('#busca').addEventListener('input', (e) => { estado.filtro = e.target.value; renderLista(); });
+
+// ======================================================================
+// Editor
+// ======================================================================
+const checks = (campo, opcoes) => `<div class="checks" data-checks="${campo}">${Object.entries(opcoes).map(([v, r]) =>
+  `<label><input type="checkbox" value="${esc(v)}"> ${esc(r)}</label>`).join('')}</div>`;
+const select = (campo, opcoes, vazio) => `<select data-campo="${campo}">${vazio ? `<option value="">${esc(vazio)}</option>` : ''}${Object.entries(opcoes).map(([v, r]) =>
+  `<option value="${esc(v)}">${esc(r)}</option>`).join('')}</select>`;
+
+function formulario() {
+  const guildas = Object.fromEntries(Object.entries(Regras.GUILDAS).map(([k, g]) => [k, `${g.rotulo} (${g.descricao})`]));
+  const ambientes = Object.fromEntries(Ambientes.lista.map((a) => [a.id, `${a.icone} ${a.nome}`]));
+  const eventos = Object.fromEntries(Ambientes.eventos.filter((e) => !e.soltaExotica).map((e) => [e.id, `${e.icone} ${e.nome.replace(/!$/, '')}`]));
+  const come = { ...Object.fromEntries(Object.entries(Regras.RECURSOS).map(([k, r]) => [k, r.rotulo])), peixes: 'Peixes menores' };
+  return `
+  <div class="previa">
+    <canvas id="previa" width="240" height="120" style="width:240px;height:120px"></canvas>
+    <div><h2 id="previa-nome"></h2><div class="cient" id="previa-cient"></div></div>
+    <div class="acoes-especie">
+      <button class="btn sec" id="btn-subir" title="Mover para cima na lista">↑</button>
+      <button class="btn sec" id="btn-descer" title="Mover para baixo na lista">↓</button>
+      <button class="btn sec" id="btn-duplicar">⧉ Duplicar</button>
+      <button class="btn perigo" id="btn-excluir">🗑 Excluir</button>
+    </div>
+  </div>
+  <ul id="problemas"></ul>
+
+  <fieldset><legend>Identificação</legend><div class="grade">
+    <label class="campo"><span>Nome popular</span><input type="text" data-campo="nome_popular"></label>
+    <label class="campo"><span>Nome científico</span><input type="text" data-campo="nome_cientifico"></label>
+    <label class="campo largo"><span>UID da tag NFC</span>
+      <div class="linha-uid"><input type="text" data-campo="uid" data-tipo="lista" placeholder="04A1B2C3D4E5F6, SIM-01">
+      <button class="btn sec" id="btn-ler-uid" type="button" title="Conecte o leitor e encoste o peixe">📡 Ler do leitor</button></div>
+      <small>Separe por vírgula se houver mais de um peixe impresso desta espécie. "SIM-xx" é o código do modo simulação.</small></label>
+  </div></fieldset>
+
+  <fieldset><legend>Ecologia</legend><div class="grade">
+    <label class="campo"><span>Guilda trófica</span>${select('guilda_trofica', guildas, 'Escolha…')}</label>
+    <label class="campo"><span>Porte</span>${select('porte', PORTES)}<small>Um predador só come peixes de porte menor que o dele.</small></label>
+    <label class="campo"><span>Status de ameaça</span>${select('status_ameaca', Object.fromEntries(Object.entries(STATUS).map(([k, v]) => [k, `${k} · ${v}`])))}</label>
+    <div class="campo"><span>Origem e características</span><div class="checks">
+      <label class="bool"><input type="checkbox" data-campo="nativo" data-tipo="bool"> Nativo</label>
+      <label class="bool"><input type="checkbox" data-campo="endemico" data-tipo="bool"> Endêmico</label>
+      <label class="bool"><input type="checkbox" data-campo="migrador" data-tipo="bool"> Migrador</label></div></div>
+    <div class="campo largo"><span>Habitat</span>${checks('habitat', Regras.HABITATS)}</div>
+    <div class="campo largo"><span>O que come (teia alimentar)</span>${checks('come', come)}<small>Nenhum marcado = usa a dieta padrão da guilda.</small></div>
+    <label class="campo largo"><span>Dieta (texto da ficha)</span><input type="text" data-campo="dieta"></label>
+  </div></fieldset>
+
+  <fieldset><legend>Desafio do ambiente</legend><div class="grade">
+    <div class="campo largo"><span>Vive bem em</span>${checks('ambientes', ambientes)}</div>
+    <div class="campo largo"><span>Sofre com os eventos</span>${checks('sofre_com', eventos)}</div>
+    <div class="campo largo" id="bloco-exotico"><span>Peixe exótico</span>
+      <label class="bool"><input type="checkbox" data-campo="tentador" data-tipo="bool"> "Peixe tentador" (parece boa ideia)</label>
+      <label class="campo" style="margin-top:.4rem"><span>Por que parece boa ideia</span><input type="text" data-campo="por_que_tenta" placeholder="cresce rápido e é fácil de criar"></label></div>
+  </div></fieldset>
+
+  <fieldset><legend>Textos da ficha</legend><div class="grade">
+    <label class="campo largo"><span>Descrição curta</span><textarea data-campo="descricao_curta"></textarea><small class="contador" id="contador"></small></label>
+  </div></fieldset>
+
+  <fieldset><legend>Imagens</legend><div class="grade">
+    <label class="campo"><span>Ilustração (topo da ficha)</span><input type="text" data-campo="imagem" placeholder="img/lambari.png"></label>
+    <label class="campo"><span>Foto real (embaixo da descrição)</span><input type="text" data-campo="foto" placeholder="img/fotos/lambari.jpg"></label>
+    <label class="campo"><span>Termo de busca da foto</span><input type="text" data-campo="foto_busca"><small>Usado por ferramentas/baixar_fotos.py</small></label>
+    <label class="campo"><span>Crédito da foto</span><input type="text" data-campo="foto_credito"></label>
+    <label class="campo"><span>Licença</span><input type="text" data-campo="foto_licenca" placeholder="CC BY-SA 4.0"></label>
+    <label class="campo"><span>Fonte (link)</span><input type="url" data-campo="foto_fonte"></label>
+  </div></fieldset>
+
+  <fieldset><legend>Aparência no jogo</legend><div class="grade">
+    <label class="campo"><span>Forma</span>${select('visual.forma', Object.fromEntries(FORMAS.map((f) => [f, f])))}</label>
+    <label class="campo"><span>Onde nada</span>${select('visual.coluna', COLUNAS)}</label>
+    <div class="campo"><span>Cores</span><div class="cores">
+      <label>Corpo <input type="color" data-campo="visual.cor"></label>
+      <label>Detalhe <input type="color" data-campo="visual.detalhe"></label></div></div>
+  </div></fieldset>
+
+  <fieldset><legend>Revisão</legend><div class="grade">
+    <label class="bool largo"><input type="checkbox" data-campo="validar" data-tipo="bool"> Dado biológico ainda precisa ser validado</label>
+    <label class="campo largo"><span>Notas de validação</span><textarea data-campo="notas_validacao"></textarea></label>
+  </div></fieldset>`;
+}
+
+const ler = (e, campo) => campo.split('.').reduce((o, k) => (o ? o[k] : undefined), e);
+function gravar(e, campo, valor) {
+  const partes = campo.split('.');
+  let o = e;
+  partes.slice(0, -1).forEach((k) => { o[k] = o[k] || {}; o = o[k]; });
+  const k = partes[partes.length - 1];
+  if (valor === undefined || valor === '') delete o[k]; else o[k] = valor;
+}
+
+function selecionar(i) {
+  const especies = estado.dados ? estado.dados.especies : [];
+  if (i < 0 || i >= especies.length) { estado.atual = -1; $('#editor').innerHTML = '<p class="vazio">Nenhuma espécie. Crie uma nova.</p>'; renderLista(); return; }
+  estado.atual = i;
+  const e = especies[i];
+  const ed = $('#editor');
+  ed.innerHTML = formulario();
+  ed.scrollTop = 0;
+
+  ed.querySelectorAll('[data-campo]').forEach((el) => {
+    const campo = el.dataset.campo, v = ler(e, campo);
+    if (el.dataset.tipo === 'bool') el.checked = !!v;
+    else if (el.dataset.tipo === 'lista') el.value = [].concat(v || []).join(', ');
+    else if (el.type === 'color') el.value = /^#[0-9a-f]{6}$/i.test(v || '') ? v : '#9fb8c0';
+    else el.value = v ?? '';
+    el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'color' ? 'change' : 'input', () => {
+      let valor;
+      if (el.dataset.tipo === 'bool') valor = el.checked;
+      else if (el.dataset.tipo === 'lista') { const l = el.value.split(',').map((s) => s.trim()).filter(Boolean); valor = l.length > 1 ? l : l[0]; }
+      else valor = el.value;
+      gravar(e, campo, valor);
+      if (campo === 'nativo' && el.checked) { delete e.tentador; delete e.por_que_tenta; }
+      atualizarEspecie();
+    });
+  });
+  ed.querySelectorAll('[data-checks]').forEach((box) => {
+    const campo = box.dataset.checks, atuais = [].concat(e[campo] || []);
+    box.querySelectorAll('input').forEach((cb) => {
+      cb.checked = atuais.includes(cb.value);
+      cb.addEventListener('change', () => {
+        const marcados = [...box.querySelectorAll('input:checked')].map((x) => x.value);
+        if (campo === 'come' && !marcados.length) delete e.come;
+        else e[campo] = marcados;
+        atualizarEspecie();
+      });
+    });
+  });
+
+  $('#btn-excluir').addEventListener('click', () => {
+    if (!confirm(`Excluir ${e.nome_popular || 'esta espécie'}?`)) return;
+    especies.splice(i, 1); mudou(); selecionar(Math.min(i, especies.length - 1));
+  });
+  $('#btn-duplicar').addEventListener('click', () => {
+    const copia = JSON.parse(JSON.stringify(e));
+    copia.nome_popular = (e.nome_popular || '') + ' (cópia)';
+    copia.nome_cientifico = (e.nome_cientifico || '') + ' (cópia)';
+    copia.uid = proximoUidSim();
+    especies.splice(i + 1, 0, copia); mudou(); selecionar(i + 1);
+  });
+  $('#btn-subir').addEventListener('click', () => mover(i, -1));
+  $('#btn-descer').addEventListener('click', () => mover(i, +1));
+  $('#btn-ler-uid').addEventListener('click', () => Leitor.esperarUid());
+  atualizarEspecie(true);
+}
+
+function mover(i, d) {
+  const l = estado.dados.especies, j = i + d;
+  if (j < 0 || j >= l.length) return;
+  [l[i], l[j]] = [l[j], l[i]];
+  mudou(); selecionar(j);
+}
+
+function atualizarEspecie(semMudar) {
+  const e = estado.dados.especies[estado.atual];
+  if (!semMudar) mudou();
+  $('#previa-nome').textContent = e.nome_popular || '(sem nome)';
+  $('#previa-cient').textContent = e.nome_cientifico || '';
+  $('#bloco-exotico').hidden = !!e.nativo;
+  const n = (e.descricao_curta || '').length;
+  $('#contador').textContent = `${n} caracteres`;
+  $('#contador').className = 'contador' + (n > 220 ? ' longo' : '');
+  $('#problemas').innerHTML = problemas(e, estado.atual).map((p) => `<li class="${p.tipo}">${p.tipo === 'erro' ? '⛔' : '⚠️'} ${esc(p.texto)}</li>`).join('');
+  renderLista();
+}
+
+function proximoUidSim() {
+  const usados = estado.dados.especies.flatMap(uidsDe);
+  let n = 1;
+  while (usados.includes(`SIM-${String(n).padStart(2, '0')}`)) n++;
+  return `SIM-${String(n).padStart(2, '0')}`;
+}
+
+$('#btn-nova').addEventListener('click', () => {
+  const nova = {
+    uid: proximoUidSim(), nome_popular: 'Nova espécie', nome_cientifico: '', guilda_trofica: 'onivoro', dieta: '',
+    habitat: [], ambientes: [], sofre_com: [], migrador: false, status_ameaca: 'NE', nativo: true, endemico: false,
+    porte: 'pequeno', descricao_curta: '', imagem: '', foto: '', foto_busca: '', foto_credito: '', foto_licenca: '', foto_fonte: '',
+    validar: true, notas_validacao: '', visual: { cor: '#9fb8c0', detalhe: '#334455', forma: 'fusiforme', coluna: 'meio' }
+  };
+  estado.dados.especies.push(nova);
+  estado.filtro = ''; $('#busca').value = '';
+  mudou(); selecionar(estado.dados.especies.length - 1);
+  $('[data-campo="nome_popular"]').select();
+});
+
+// prévia animada do peixe
+(function animarPrevia(t) {
+  const c = $('#previa');
+  if (c && estado.atual >= 0) {
+    const g = c.getContext('2d');
+    const dpr = devicePixelRatio || 1;
+    if (c.width !== 240 * dpr) { c.width = 240 * dpr; c.height = 120 * dpr; }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, 240, 120);
+    g.translate(120, 60);
+    Peixe.desenhar(g, estado.dados.especies[estado.atual], 190, t / 1000);
+  }
+  requestAnimationFrame(animarPrevia);
+})(0);
+
+// ======================================================================
+// Leitor NFC (Web Serial): lê o UID e coloca na espécie aberta
+// ======================================================================
+const Leitor = (() => {
+  let porta = null, esperando = false;
+  async function conectar() {
+    if (!('serial' in navigator)) { avisar('Este navegador não tem Web Serial. Use Chrome ou Edge.', 'erro'); return false; }
+    if (porta) return true;
+    try {
+      porta = await navigator.serial.requestPort();
+      await porta.open({ baudRate: 115200 });
+    } catch (e) {
+      porta = null;
+      if (e.name !== 'NotFoundError') avisar('Não consegui abrir o leitor: ' + e.message, 'erro');
+      return false;
+    }
+    $('#btn-leitor').textContent = '📡 Leitor conectado';
+    ler();
+    return true;
+  }
+  async function ler() {
+    const dec = new TextDecoderStream();
+    porta.readable.pipeTo(dec.writable).catch(() => {});
+    const r = dec.readable.getReader();
+    let buf = '';
+    try {
+      for (;;) {
+        const { value, done } = await r.read();
+        if (done) break;
+        buf += value;
+        let i;
+        while ((i = buf.indexOf('\n')) >= 0) {
+          const linha = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+          if (linha.startsWith('UID:')) recebeu(linha.slice(4).trim().toUpperCase());
+        }
+      }
+    } catch (_) {
+      avisar('O leitor foi desconectado.', 'erro');
+    }
+    porta = null;
+    $('#btn-leitor').textContent = '📡 Conectar leitor';
+  }
+  function recebeu(uid) {
+    const dono = estado.dados.especies.findIndex((e) => uidsDe(e).includes(uid));
+    if (!esperando) {
+      avisar(dono >= 0 ? `${uid} é ${estado.dados.especies[dono].nome_popular}.` : `UID ${uid} ainda não cadastrado. Abra uma espécie e clique em "Ler do leitor".`);
+      if (dono >= 0) selecionar(dono);
+      return;
+    }
+    esperando = false;
+    const e = estado.dados.especies[estado.atual];
+    if (dono >= 0 && dono !== estado.atual) { avisar(`Esse peixe já está cadastrado como ${estado.dados.especies[dono].nome_popular}.`, 'erro'); return; }
+    if (dono === estado.atual) { avisar('Esse UID já é desta espécie.'); return; }
+    const lista = uidsDe(e);
+    lista.push(uid);
+    e.uid = lista.length > 1 ? lista : lista[0];
+    $('[data-campo="uid"]').value = lista.join(', ');
+    atualizarEspecie();
+    avisar(`UID ${uid} adicionado a ${e.nome_popular}.`);
+  }
+  async function esperarUid() {
+    if (!(await conectar())) return;
+    esperando = true;
+    avisar(`Encoste o peixe de ${estado.dados.especies[estado.atual].nome_popular} no leitor…`);
+  }
+  return { conectar, esperarUid };
+})();
+$('#btn-leitor').addEventListener('click', () => Leitor.conectar());
+
+// ======================================================================
+function avisar(texto, tipo = '') {
+  const d = document.createElement('div');
+  d.className = 'aviso ' + tipo;
+  d.textContent = texto;
+  $('#avisos').appendChild(d);
+  setTimeout(() => d.remove(), 4200);
+}
+
+carregar();
+</script>
+</body>
+</html>

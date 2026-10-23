@@ -1,0 +1,55 @@
+{
+  "_leia_me": [
+    "Configuração do jogo. Edite pelo painel admin (aba 'Regras e pontuação') ou à mão.",
+    "Os valores aqui substituem os padrões de regras.js e ambientes.js. Apagar uma linha volta ao padrão.",
+    "regras.notaRelativa = true: 100 pontos = o melhor rio possível com as espécies e o ambiente da rodada (sempre dá para fazer 100).",
+    "ambientes.<id>.peixes: quantos peixes a rodada tem naquele ambiente; ambientes.<id>.meta: meta própria (vazio = metaSaude)."
+  ],
+  "regras": {
+    "metaSaude": 70,
+    "maxPeixesPorRodada": 5,
+    "riquezaIdeal": 5,
+    "notaRelativa": true,
+    "pesos": {
+      "equilibrio": 35,
+      "habitats": 20,
+      "nativas": 25,
+      "conservacao": 20
+    },
+    "pesosDesafio": {
+      "equilibrio": 30,
+      "habitats": 10,
+      "nativas": 20,
+      "conservacao": 10,
+      "adaptacao": 30
+    },
+    "penalidadePorExotica": 25,
+    "penalidadeSemPredador": 15,
+    "penalidadeExcessoPredadores": 20,
+    "penalidadePredadorFaminto": 15,
+    "penalidadePoucasPresas": 8,
+    "fracaoMaxPredadores": 0.34,
+    "presasPorPredador": 2
+  },
+  "ambientes": {
+    "cabeceira": {
+      "peixes": null,
+      "meta": null
+    },
+    "planicie": {
+      "peixes": null,
+      "meta": null
+    },
+    "brejo": {
+      "peixes": 4,
+      "meta": null
+    },
+    "represa": {
+      "peixes": 4,
+      "meta": null
+    }
+  },
+  "eventos": {
+    "chanceEvento": 0.7
+  }
+}

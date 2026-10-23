@@ -25,6 +25,9 @@
     maxPeixesPorRodada: 5,       // a rodada termina quando o rio tiver este número de peixes
     metaSaude: 70,               // meta cooperativa (0–100)
     riquezaIdeal: 5,             // abaixo disso a saúde é reduzida (comunidade pequena demais)
+    // Nota relativa: 100 = o melhor rio possível com as espécies e o ambiente da rodada.
+    // Assim sempre existe uma combinação que faz 100. Com false, vale a nota absoluta.
+    notaRelativa: true,
     permitirEspecieRepetida: false,
 
     // Peso de cada componente na saúde (a soma não precisa dar 100; é normalizada)
@@ -316,15 +319,19 @@
       return { id: c.id, rotulo: c.rotulo, nota: limitar(r.nota), peso };
     });
 
-    const fatorRiqueza = 0.3 + 0.7 * limitar(sobreviventes.length / CONFIG.riquezaIdeal);
-    if (comunidade.length < CONFIG.riquezaIdeal) {
+    const ideal = riquezaIdeal(ctx);
+    const fatorRiqueza = 0.3 + 0.7 * limitar(sobreviventes.length / ideal);
+    if (comunidade.length < ideal) {
       dicas.push({ prioridade: 0, texto: 'A comunidade ainda está pequena. Continue colocando peixes!' });
     } else if (sobreviventes.length < comunidade.length) {
       dicas.push({ prioridade: 0, texto: `Só ${sobreviventes.length} dos ${comunidade.length} peixes conseguem viver aqui.` });
     }
 
     const exoticas = comunidade.filter((e) => !e.nativo).length;
-    const bruta = Math.round((soma / (somaPesos || 1)) * 100 * fatorRiqueza - exoticas * CONFIG.penalidadePorExotica - penalidades);
+    let bruta = (soma / (somaPesos || 1)) * 100 * fatorRiqueza - exoticas * CONFIG.penalidadePorExotica - penalidades;
+    // nota relativa: divide pelo melhor resultado possível nesta rodada (ctx.maximo, calculado por melhores())
+    if (CONFIG.notaRelativa && ctx && ctx.maximo > 0) bruta = (bruta / ctx.maximo) * 100;
+    bruta = Math.round(bruta);
     const saude = limitar(bruta, 0, 100);   // "bruta" pode ficar negativa: o relatório usa para mostrar o efeito de cada jogada
 
     dicas.sort((a, b) => b.prioridade - a.prioridade);
@@ -457,12 +464,58 @@
     else if (n >= 2) negativos.push({ icone: '🌊', texto: `Nenhum peixe nativo ocupou ${juntar(faltam.map((h) => 'o ' + HABITATS[h].toLowerCase()))}.` });
     const especiais = sobreviventes.filter((e) => e.nativo && (e.endemico || ehAmeacado(e) || (e.migrador && !(amb && amb.bloqueiaMigradores))));
     if (especiais.length) positivos.push({ icone: '⭐', texto: `${juntar(especiais.map((e) => e.nome_popular))}: ${especiais.length > 1 ? 'espécies especiais' : 'espécie especial'} (rara, ameaçada ou migradora), vale bônus.` });
-    if (n < CONFIG.riquezaIdeal && comunidade.length) {
+    if (n < riquezaIdeal(ctx) && comunidade.length) {
       negativos.push({ icone: '🐟', texto: n < comunidade.length ? `Só ${n} dos ${comunidade.length} peixes conseguiram viver aqui: a comunidade ficou pequena.` : 'Comunidade pequena: poucos peixes no rio.' });
     }
 
     return { positivos, negativos, peixes };
   }
 
-  global.Regras = { CONFIG, GUILDAS, RECURSOS, HABITATS, PORTE, avaliar, teiaAlimentar, adaptacao, explicar, mensagemEntrada, ehAmeacado, idDe };
+  // ------------------------------------------------------------------
+  // Melhor combinação possível (testa todas: 5 de 14 espécies = 2002 combinações)
+  // ------------------------------------------------------------------
+  function combinacoes(lista, k, fazer) {
+    const idx = [];
+    (function rec(inicio, nivel) {
+      if (nivel === k) { fazer(idx.map((i) => lista[i])); return; }
+      for (let i = inicio; i <= lista.length - (k - nivel); i++) { idx[nivel] = i; rec(i + 1, nivel + 1); }
+    })(0, 0);
+  }
+
+  // Retorna as `quantos` melhores combinações de n espécies, a nota absoluta de cada uma
+  // e quantas combinações existem no total. ctx: { ambiente, evento, vagas } (sem "maximo").
+  function melhores(especies, ctx, n, quantos = 3) {
+    const semMax = { ...(ctx || {}), maximo: undefined };
+    const k = Math.min(n, especies.length);
+    const top = [];
+    let total = 0;
+    const notas = [];
+    combinacoes(especies, k, (c) => {
+      const r = avaliar(c, semMax);
+      total++;
+      notas.push(r.bruta);
+      if (top.length < quantos || r.bruta > top[top.length - 1].nota) {
+        top.push({ nota: r.bruta, especies: c });
+        top.sort((a, b) => b.nota - a.nota);
+        if (top.length > quantos) top.pop();
+      }
+    });
+    return { top, total, notas };
+  }
+
+  // riqueza ideal nunca passa do número de peixes que cabem na rodada (ex.: reagir a um evento deixa 4 vagas)
+  function riquezaIdeal(ctx) {
+    return Math.max(1, Math.min(CONFIG.riquezaIdeal, (ctx && ctx.vagas) || CONFIG.riquezaIdeal));
+  }
+
+  // aplica um config.json por cima dos valores padrão (usado pelo jogo e pelo painel admin)
+  function aplicarConfig(cfg) {
+    if (!cfg || !cfg.regras) return;
+    Object.entries(cfg.regras).forEach(([k, v]) => {
+      if (v && typeof v === 'object' && !Array.isArray(v) && CONFIG[k] && typeof CONFIG[k] === 'object') Object.assign(CONFIG[k], v);
+      else if (k in CONFIG) CONFIG[k] = v;
+    });
+  }
+
+  global.Regras = { CONFIG, GUILDAS, RECURSOS, HABITATS, PORTE, avaliar, teiaAlimentar, adaptacao, explicar, mensagemEntrada, ehAmeacado, idDe, melhores, aplicarConfig };
 })(typeof window !== 'undefined' ? window : globalThis);

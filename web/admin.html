@@ -74,7 +74,8 @@
   legend { font-family: var(--fonte-titulo); font-weight: 800; font-size: 1.1rem; padding: 0 .4rem; }
   .grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .7rem 1rem; }
   .campo { display: flex; flex-direction: column; gap: .2rem; }
-  .campo.largo { grid-column: 1 / -1; }
+  .campo.largo, .grade > .largo { grid-column: 1 / -1; }
+  .bool small { color: var(--suave); }
   .campo > span { font-weight: 800; font-size: .85rem; }
   .campo small { color: var(--suave); font-size: .78rem; }
   .campo input[type=text], .campo input[type=url], .campo select, .campo textarea {
@@ -105,7 +106,30 @@
   .aviso { background: var(--texto); color: #fff; padding: .55rem 1rem; border-radius: 12px; font-weight: 700; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
   .aviso.erro { background: var(--erro); }
 
+  .abas { display: flex; gap: .3rem; padding: .4rem 1rem 0; border-bottom: 1px solid var(--borda); }
+  .abas button { border: 1px solid transparent; border-bottom: 0; background: none; padding: .5rem 1rem; border-radius: 10px 10px 0 0; font-weight: 800; color: var(--suave); }
+  .abas button.ativa { background: #fff; border-color: var(--borda); color: var(--texto); margin-bottom: -1px; }
+  .aba-cheia { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem 1.4rem 3rem; }
+  .aba-cheia[hidden], main[hidden] { display: none; }
+  .regras-topo { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+  .regras-topo .nota { flex: 1; margin: 0; }
+  .aba-cheia input[type=number] { padding: .45rem .6rem; border: 1px solid var(--borda); border-radius: 9px; background: #fff; }
+  .teste-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 1rem; }
+  .teste-card { border: 1px solid var(--borda); border-left: 6px solid var(--ok); border-radius: 14px; padding: .7rem 1rem .9rem; }
+  .teste-card.atencao { border-left-color: var(--aviso); }
+  .teste-card.ruim { border-left-color: var(--erro); }
+  .teste-card p { margin: .35rem 0; }
+  .teste-topo { display: flex; align-items: center; justify-content: space-between; }
+  .teste-topo h3 { margin: 0; font-family: var(--fonte-titulo); font-size: 1.25rem; }
+  .teste-nota { font-family: var(--fonte-titulo); font-size: 2rem; font-weight: 800; color: var(--ok); }
+  .teste-card.atencao .teste-nota { color: #a06f00; }
+  .teste-aviso { background: var(--aviso-claro); color: #6b5200; border-radius: 9px; padding: .35rem .6rem; font-weight: 700; font-size: .92rem; }
+  .teste-card .detalhes { color: var(--suave); font-size: .88rem; }
+  .teste-card details { margin-top: .4rem; font-size: .92rem; }
+  .teste-card summary { cursor: pointer; font-weight: 800; color: var(--suave); }
+  .teste-eventos { margin: .3rem 0 0; }
   @media (max-width: 800px) {
+    .teste-grade { grid-template-columns: 1fr; }
     main { grid-template-columns: 1fr; grid-template-rows: 40vh auto; }
     body { height: auto; }
     aside { border-right: 0; border-bottom: 1px solid var(--borda); }
@@ -124,12 +148,18 @@
   <button class="btn sec" id="btn-abrir" title="Abrir um especies.json do computador">📂 Abrir arquivo</button>
   <button class="btn sec" id="btn-leitor" title="Conectar o leitor NFC para ler os UIDs dos peixes">📡 Conectar leitor</button>
   <button class="btn sec" id="btn-testar" title="Abre o jogo usando este rascunho, só neste navegador">▶ Testar no jogo</button>
-  <button class="btn sec" id="btn-baixar">⬇ Baixar especies.json</button>
+  <button class="btn sec" id="btn-baixar" title="Baixa especies.json e config.json">⬇ Baixar arquivos</button>
   <button class="btn" id="btn-github">☁ Salvar no GitHub</button>
   <a class="btn sec" href="index.html" style="text-decoration:none">← Jogo</a>
 </header>
 
-<main>
+<nav class="abas">
+  <button class="ativa" data-aba="especies">🐟 Espécies</button>
+  <button data-aba="regras">⚙️ Regras e pontuação</button>
+  <button data-aba="teste">🏆 Teste dos 100 pontos</button>
+</nav>
+
+<main id="aba-especies">
   <aside>
     <div class="busca"><input id="busca" type="search" placeholder="Buscar espécie…" aria-label="Buscar espécie"></div>
     <ul id="lista"></ul>
@@ -141,16 +171,26 @@
   <section id="editor"><p class="vazio">Escolha uma espécie na lista.</p></section>
 </main>
 
+<section id="aba-regras" class="aba-cheia" hidden></section>
+
+<section id="aba-teste" class="aba-cheia" hidden>
+  <div class="regras-topo">
+    <p class="nota">Para cada modo e ambiente, o painel testa <b>todas</b> as combinações de peixes e mostra a melhor (a "receita do 100"), quantas combinações batem a meta e o que precisa mudar quando o 100 não é possível. Usa as espécies e regras deste rascunho, mesmo antes de salvar.</p>
+    <button class="btn" id="btn-recalcular">↻ Recalcular</button>
+  </div>
+  <div id="teste-resultados" class="teste-grade"></div>
+</section>
+
 <input type="file" id="arquivo" accept=".json,application/json" hidden>
 
 <dialog id="dlg-github">
   <h2>Salvar no GitHub</h2>
-  <p class="nota">Faz um commit do <code>especies.json</code> direto no repositório. Se o jogo estiver no GitHub Pages, ele atualiza sozinho em 1 ou 2 minutos.</p>
+  <p class="nota">Faz um commit de cada arquivo alterado (<code>especies.json</code> e/ou <code>config.json</code>, na mesma pasta) direto no repositório. Se o jogo estiver no GitHub Pages, ele atualiza sozinho em 1 ou 2 minutos.</p>
   <div class="grade" style="margin-top:.7rem">
     <label class="campo"><span>Dono (usuário)</span><input type="text" id="gh-dono"></label>
     <label class="campo"><span>Repositório</span><input type="text" id="gh-repo"></label>
     <label class="campo"><span>Branch</span><input type="text" id="gh-branch"></label>
-    <label class="campo"><span>Caminho do arquivo</span><input type="text" id="gh-caminho"></label>
+    <label class="campo"><span>Caminho do especies.json</span><input type="text" id="gh-caminho"></label>
     <label class="campo largo"><span>Token do GitHub</span><input type="password" id="gh-token" autocomplete="off" placeholder="github_pat_…">
       <small>Crie em <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>: em <i>Repository access</i> escolha só este repositório e em <i>Permissions → Contents</i> marque <b>Read and write</b>. O token nunca vai para o repositório.</small></label>
     <label class="bool largo"><input type="checkbox" id="gh-lembrar"> Lembrar o token neste navegador (só use no seu computador)</label>
@@ -184,14 +224,32 @@ const ORDEM = ['uid', 'nome_popular', 'nome_cientifico', 'guilda_trofica', 'diet
   'migrador', 'status_ameaca', 'nativo', 'endemico', 'tentador', 'por_que_tenta', 'porte', 'come', 'descricao_curta',
   'imagem', 'foto', 'foto_busca', 'foto_arquivo', 'foto_credito', 'foto_licenca', 'foto_fonte', 'validar', 'notas_validacao', 'visual'];
 
-const estado = { dados: null, original: '', atual: -1, sujo: false, filtro: '' };
+const estado = { dados: null, original: '', config: null, configOriginal: '', atual: -1, sujo: false, filtro: '', testeDesatualizado: true };
 
 // ======================================================================
-// Carregar / salvar
+// Carregar / salvar (dois arquivos: especies.json e config.json)
 // ======================================================================
+const CHAVE_RASCUNHO_CFG = 'reconhecendo-rio:rascunho-config';
+// padrões que vêm de regras.js e ambientes.js (o config.json só sobrescreve)
+const PADRAO_REGRAS = JSON.parse(JSON.stringify(Regras.CONFIG));
+const PADRAO_AMB = Object.fromEntries(Ambientes.lista.map((a) => [a.id, { meta: a.meta, peixes: a.peixes }]));
+const PADRAO_EV = { ...Ambientes.CONFIG };
+const CAMPOS_REGRAS = ['metaSaude', 'maxPeixesPorRodada', 'riquezaIdeal', 'notaRelativa', 'pesos', 'pesosDesafio',
+  'penalidadePorExotica', 'penalidadeSemPredador', 'penalidadeExcessoPredadores', 'penalidadePredadorFaminto',
+  'penalidadePoucasPresas', 'fracaoMaxPredadores', 'presasPorPredador'];
+
+function configPadrao() {
+  return {
+    _leia_me: ['Configuração do jogo, editada pelo painel admin (aba "Regras e pontuação").'],
+    regras: Object.fromEntries(CAMPOS_REGRAS.map((k) => [k, JSON.parse(JSON.stringify(PADRAO_REGRAS[k]))])),
+    ambientes: Object.fromEntries(Ambientes.lista.map((a) => [a.id, { peixes: null, meta: null }])),
+    eventos: { chanceEvento: PADRAO_EV.chanceEvento }
+  };
+}
+
 async function carregar() {
-  let rascunho = null;
-  try { rascunho = localStorage.getItem(CHAVE_RASCUNHO); } catch (_) {}
+  let rascunho = null, rascunhoCfg = null;
+  try { rascunho = localStorage.getItem(CHAVE_RASCUNHO); rascunhoCfg = localStorage.getItem(CHAVE_RASCUNHO_CFG); } catch (_) {}
   let carregou = false;
   try {
     const r = await fetch('especies.json', { cache: 'no-store' });
@@ -199,17 +257,22 @@ async function carregar() {
     usar(await r.json());
     carregou = true;
   } catch (_) { /* file:// bloqueia o fetch */ }
+  let cfg = null;
+  try { const r = await fetch('config.json', { cache: 'no-store' }); if (r.ok) cfg = await r.json(); } catch (_) {}
+  usarConfig(cfg || configPadrao());
+
   if (!carregou && !rascunho) { avisar('Não consegui ler especies.json sozinho. Use "Abrir arquivo".', 'erro'); return; }
+  const temRascunho = (rascunho && rascunho !== estado.original) || (rascunhoCfg && rascunhoCfg !== estado.configOriginal);
   if (!carregou) {
     usar(JSON.parse(rascunho));
     avisar('Abrindo o último rascunho salvo neste navegador.');
-  } else if (rascunho && rascunho !== estado.original && confirm('Há um rascunho não salvo deste painel no navegador. Quer continuar de onde parou?')) {
-    estado.dados = JSON.parse(rascunho);
-    estado.sujo = true;
+  } else if (temRascunho && confirm('Há um rascunho não salvo deste painel no navegador. Quer continuar de onde parou?')) {
+    if (rascunho) estado.dados = JSON.parse(rascunho);
+    if (rascunhoCfg) { estado.config = JSON.parse(rascunhoCfg); aplicarConfigRascunho(); }
   }
+  mudou(true);
   renderLista();
   selecionar(0);
-  marcarEstado();
 }
 
 function usar(json) {
@@ -219,10 +282,34 @@ function usar(json) {
   estado.sujo = false;
 }
 
+function usarConfig(cfg) {
+  const base = configPadrao();
+  estado.config = {
+    ...base, ...cfg,
+    regras: { ...base.regras, ...(cfg.regras || {}),
+              pesos: { ...base.regras.pesos, ...((cfg.regras || {}).pesos || {}) },
+              pesosDesafio: { ...base.regras.pesosDesafio, ...((cfg.regras || {}).pesosDesafio || {}) } },
+    ambientes: Object.fromEntries(Object.keys(base.ambientes).map((id) => [id, { ...base.ambientes[id], ...((cfg.ambientes || {})[id] || {}) }])),
+    eventos: { ...base.eventos, ...(cfg.eventos || {}) }
+  };
+  estado.configOriginal = serializarConfig();
+  aplicarConfigRascunho();
+}
+
+// volta regras.js/ambientes.js ao padrão e aplica o rascunho por cima (para a aba de teste usar)
+function aplicarConfigRascunho() {
+  Object.entries(JSON.parse(JSON.stringify(PADRAO_REGRAS))).forEach(([k, v]) => { Regras.CONFIG[k] = v; });
+  Ambientes.lista.forEach((a) => { ['meta', 'peixes'].forEach((k) => { if (PADRAO_AMB[a.id][k] == null) delete a[k]; else a[k] = PADRAO_AMB[a.id][k]; }); });
+  Object.assign(Ambientes.CONFIG, PADRAO_EV);
+  Regras.aplicarConfig(estado.config);
+  Ambientes.aplicarConfig(estado.config);
+}
+
 function serializar() {
   const dados = { ...estado.dados, especies: estado.dados.especies.map(ordenar) };
   return JSON.stringify(dados, null, 2) + '\n';
 }
+const serializarConfig = () => JSON.stringify(estado.config, null, 2) + '\n';
 
 function ordenar(e) {
   const o = {};
@@ -231,19 +318,28 @@ function ordenar(e) {
   return o;
 }
 
-function mudou() {
-  estado.sujo = serializar() !== estado.original;
-  try { localStorage.setItem(CHAVE_RASCUNHO, serializar()); } catch (_) {}
+const arquivosMudados = () => [
+  ...(serializar() !== estado.original ? ['especies.json'] : []),
+  ...(serializarConfig() !== estado.configOriginal ? ['config.json'] : [])
+];
+
+function mudou(semRascunho) {
+  estado.sujo = arquivosMudados().length > 0;
+  if (!semRascunho) {
+    try { localStorage.setItem(CHAVE_RASCUNHO, serializar()); localStorage.setItem(CHAVE_RASCUNHO_CFG, serializarConfig()); } catch (_) {}
+  }
+  estado.testeDesatualizado = true;
   marcarEstado();
 }
 
 function marcarEstado() {
   const el = $('#estado-arquivo');
   if (!estado.dados) return;
-  const n = estado.dados ? estado.dados.especies.length : 0;
-  const erros = estado.dados ? estado.dados.especies.filter((e, i) => problemas(e, i).some((p) => p.tipo === 'erro')).length : 0;
-  el.textContent = (estado.sujo ? '● Alterações não salvas' : '✓ Igual ao arquivo') + ` · ${n} espécies` + (erros ? ` · ${erros} com erro` : '');
-  el.className = 'chip ' + (estado.sujo ? 'sujo' : 'salvo');
+  const n = estado.dados.especies.length;
+  const erros = estado.dados.especies.filter((e, i) => problemas(e, i).some((p) => p.tipo === 'erro')).length;
+  const mudados = arquivosMudados();
+  el.textContent = (mudados.length ? `● Não salvo: ${mudados.join(' e ')}` : '✓ Igual aos arquivos') + ` · ${n} espécies` + (erros ? ` · ${erros} com erro` : '');
+  el.className = 'chip ' + (mudados.length ? 'sujo' : 'salvo');
 }
 
 addEventListener('beforeunload', (ev) => { if (estado.sujo) { ev.preventDefault(); ev.returnValue = ''; } });
@@ -253,38 +349,44 @@ $('#arquivo').addEventListener('change', async (ev) => {
   const f = ev.target.files[0];
   if (!f) return;
   try {
-    usar(JSON.parse(await f.text()));
-    renderLista(); selecionar(0); marcarEstado();
-    avisar(`Arquivo "${f.name}" carregado.`);
+    const json = JSON.parse(await f.text());
+    if (json.regras || json.ambientes) { usarConfig(json); renderRegras(); avisar(`Configuração "${f.name}" carregada.`); }
+    else { usar(json); renderLista(); selecionar(0); avisar(`Arquivo "${f.name}" carregado.`); }
+    mudou(true);
   } catch (e) { avisar('Arquivo inválido: ' + e.message, 'erro'); }
   ev.target.value = '';
 });
 
-$('#btn-baixar').addEventListener('click', () => {
-  const blob = new Blob([serializar()], { type: 'application/json' });
+function baixar(nome, texto) {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'especies.json';
+  a.href = URL.createObjectURL(new Blob([texto], { type: 'application/json' }));
+  a.download = nome;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  avisar('Arquivo baixado. Substitua o web/especies.json do projeto por ele.');
+}
+$('#btn-baixar').addEventListener('click', () => {
+  baixar('especies.json', serializar());
+  setTimeout(() => baixar('config.json', serializarConfig()), 400);
+  avisar('Baixados especies.json e config.json. Substitua os dois na pasta web/ do projeto.');
 });
 
 $('#btn-testar').addEventListener('click', () => {
-  try { localStorage.setItem(CHAVE_RASCUNHO, serializar()); } catch (_) {}
+  try { localStorage.setItem(CHAVE_RASCUNHO, serializar()); localStorage.setItem(CHAVE_RASCUNHO_CFG, serializarConfig()); } catch (_) {}
   window.open('index.html?simulacao&rascunho', '_blank');
 });
 
 $('#btn-desfazer-tudo').addEventListener('click', () => {
-  if (!estado.sujo || !confirm('Descartar todas as mudanças e voltar para o arquivo carregado?')) return;
+  if (!estado.sujo || !confirm('Descartar todas as mudanças (espécies e regras) e voltar para os arquivos carregados?')) return;
   estado.dados = JSON.parse(estado.original);
-  try { localStorage.removeItem(CHAVE_RASCUNHO); } catch (_) {}
-  estado.sujo = false;
-  renderLista(); selecionar(Math.min(estado.atual, estado.dados.especies.length - 1)); marcarEstado();
+  estado.config = JSON.parse(estado.configOriginal);
+  aplicarConfigRascunho();
+  try { localStorage.removeItem(CHAVE_RASCUNHO); localStorage.removeItem(CHAVE_RASCUNHO_CFG); } catch (_) {}
+  mudou(true);
+  renderLista(); renderRegras(); selecionar(Math.min(estado.atual, estado.dados.especies.length - 1));
 });
 
 // ======================================================================
-// Salvar no GitHub (API de conteúdo: um commit por salvamento)
+// Salvar no GitHub (API de conteúdo: um commit por arquivo alterado)
 // ======================================================================
 function configGH() {
   let c = {};
@@ -305,8 +407,11 @@ $('#btn-github').addEventListener('click', () => {
   const c = configGH();
   $('#gh-dono').value = c.dono; $('#gh-repo').value = c.repo; $('#gh-branch').value = c.branch;
   $('#gh-caminho').value = c.caminho; $('#gh-token').value = c.token; $('#gh-lembrar').checked = !!c.token;
-  $('#gh-msg').value = `Atualiza espécies pelo painel admin`;
-  $('#gh-status').textContent = ''; $('#gh-status').className = '';
+  const mudados = arquivosMudados();
+  $('#gh-msg').value = mudados.includes('config.json') && !mudados.includes('especies.json')
+    ? 'Ajusta regras do jogo pelo painel admin' : 'Atualiza espécies pelo painel admin';
+  $('#gh-status').textContent = mudados.length ? `Vai salvar: ${mudados.join(' e ')}.` : 'Nada mudou desde o último salvamento.';
+  $('#gh-status').className = '';
   $('#dlg-github').showModal();
 });
 $('#gh-cancelar').addEventListener('click', () => $('#dlg-github').close());
@@ -327,29 +432,40 @@ $('#gh-salvar').addEventListener('click', async () => {
   if (!c.token) { st.textContent = 'Cole o token do GitHub.'; st.className = 'erro'; return; }
   try { localStorage.setItem(CHAVE_GH, JSON.stringify({ ...c, token: $('#gh-lembrar').checked ? c.token : '' })); } catch (_) {}
 
-  const url = `https://api.github.com/repos/${encodeURIComponent(c.dono)}/${encodeURIComponent(c.repo)}/contents/${c.caminho.split('/').map(encodeURIComponent).join('/')}`;
+  const pasta = c.caminho.includes('/') ? c.caminho.slice(0, c.caminho.lastIndexOf('/') + 1) : '';
+  const arquivos = arquivosMudados().map((nome) => nome === 'especies.json'
+    ? { nome, caminho: c.caminho, texto: serializar() }
+    : { nome, caminho: pasta + 'config.json', texto: serializarConfig() });
+  if (!arquivos.length) { st.textContent = 'Nada mudou desde o último salvamento.'; st.className = 'ok'; return; }
+
   const cab = { Authorization: `Bearer ${c.token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
   $('#gh-salvar').disabled = true;
-  st.textContent = 'Salvando…'; st.className = '';
+  const links = [];
   try {
-    // pega o "sha" da versão atual (obrigatório para atualizar um arquivo que já existe)
-    let sha;
-    const atual = await fetch(`${url}?ref=${encodeURIComponent(c.branch)}`, { headers: cab, cache: 'no-store' });
-    if (atual.ok) sha = (await atual.json()).sha;
-    else if (atual.status !== 404) throw new Error(await mensagemErro(atual));
-    const r = await fetch(url, {
-      method: 'PUT', headers: cab,
-      body: JSON.stringify({ message: $('#gh-msg').value || 'Atualiza espécies pelo painel admin', content: base64Utf8(serializar()), branch: c.branch, sha })
-    });
-    if (!r.ok) throw new Error(await mensagemErro(r));
-    const res = await r.json();
-    estado.original = serializar(); estado.sujo = false;
-    try { localStorage.removeItem(CHAVE_RASCUNHO); } catch (_) {}
-    marcarEstado();
-    st.innerHTML = `✓ Salvo! <a href="${esc(res.commit.html_url)}" target="_blank" rel="noopener">Ver o commit</a>. O GitHub Pages atualiza em 1 ou 2 minutos.`;
+    for (const arq of arquivos) {
+      st.textContent = `Salvando ${arq.nome}…`; st.className = '';
+      const url = `https://api.github.com/repos/${encodeURIComponent(c.dono)}/${encodeURIComponent(c.repo)}/contents/${arq.caminho.split('/').map(encodeURIComponent).join('/')}`;
+      // pega o "sha" da versão atual (obrigatório para atualizar um arquivo que já existe)
+      let sha;
+      const atual = await fetch(`${url}?ref=${encodeURIComponent(c.branch)}`, { headers: cab, cache: 'no-store' });
+      if (atual.ok) sha = (await atual.json()).sha;
+      else if (atual.status !== 404) throw new Error(`${arq.nome}: ${await mensagemErro(atual)}`);
+      const r = await fetch(url, {
+        method: 'PUT', headers: cab,
+        body: JSON.stringify({ message: $('#gh-msg').value || 'Atualiza o jogo pelo painel admin', content: base64Utf8(arq.texto), branch: c.branch, sha })
+      });
+      if (!r.ok) throw new Error(`${arq.nome}: ${await mensagemErro(r)}`);
+      links.push(`<a href="${esc((await r.json()).commit.html_url)}" target="_blank" rel="noopener">${esc(arq.nome)}</a>`);
+      if (arq.nome === 'especies.json') { estado.original = arq.texto; try { localStorage.removeItem(CHAVE_RASCUNHO); } catch (_) {} }
+      else { estado.configOriginal = arq.texto; try { localStorage.removeItem(CHAVE_RASCUNHO_CFG); } catch (_) {} }
+    }
+    mudou(true);
+    st.innerHTML = `✓ Salvo! Commits: ${links.join(', ')}. O GitHub Pages atualiza em 1 ou 2 minutos.`;
     st.className = 'ok';
   } catch (e) {
-    st.textContent = 'Não consegui salvar: ' + e.message; st.className = 'erro';
+    mudou(true);
+    st.innerHTML = (links.length ? `Salvo em parte (${links.join(', ')}). ` : '') + 'Não consegui salvar: ' + esc(e.message);
+    st.className = 'erro';
   } finally {
     $('#gh-salvar').disabled = false;
   }
@@ -364,6 +480,178 @@ async function mensagemErro(r) {
   if (r.status === 409) return 'o arquivo mudou no GitHub enquanto você editava. Recarregue a página e tente de novo.';
   return `${r.status} ${msg}`;
 }
+
+// ======================================================================
+// Aba "Regras e pontuação"
+// ======================================================================
+const CAMPOS_FORM = [
+  { titulo: 'Rodada e meta', campos: [
+    ['regras.metaSaude', 'Meta de saúde', 'Nota para a equipe "vencer" (0 a 100).'],
+    ['regras.maxPeixesPorRodada', 'Peixes por rodada', 'Padrão para os modos e ambientes sem valor próprio.'],
+    ['regras.riquezaIdeal', 'Riqueza ideal', 'Com menos peixes vivos que isso, a saúde cai.'],
+    ['regras.notaRelativa', 'Nota relativa (sempre dá para fazer 100)', '100 = o melhor rio possível com as espécies e o ambiente da rodada. Desligado: nota absoluta.', 'bool'],
+    ['eventos.chanceEvento', 'Chance de evento no Desafio (%)', 'De 0 a 100.', 'pct']
+  ] },
+  { titulo: 'Teia desequilibrada (pontos tirados)', campos: [
+    ['regras.penalidadeSemPredador', 'Sem predador', 'Com 3 peixes ou mais.'],
+    ['regras.penalidadeExcessoPredadores', 'Predadores demais', ''],
+    ['regras.penalidadePredadorFaminto', 'Cada predador sem presa', ''],
+    ['regras.penalidadePoucasPresas', 'Poucas presas por predador', ''],
+    ['regras.fracaoMaxPredadores', 'Fração máxima de predadores', 'Ex.: 0,34 = no máximo 1 em cada 3 peixes.', 'dec'],
+    ['regras.presasPorPredador', 'Presas por predador', 'Quantas presas cada predador precisa.']
+  ] },
+  { titulo: 'Peixes exóticos', campos: [
+    ['regras.penalidadePorExotica', 'Pontos tirados por exótico', '']
+  ] },
+  { titulo: 'Pesos da nota — Monte a comunidade', campos: [
+    ['regras.pesos.equilibrio', 'Cadeia alimentar', ''], ['regras.pesos.habitats', 'Habitats', ''],
+    ['regras.pesos.nativas', 'Peixes nativos', ''], ['regras.pesos.conservacao', 'Espécies especiais', '']
+  ] },
+  { titulo: 'Pesos da nota — Desafio do ambiente', campos: [
+    ['regras.pesosDesafio.equilibrio', 'Cadeia alimentar', ''], ['regras.pesosDesafio.habitats', 'Habitats', ''],
+    ['regras.pesosDesafio.nativas', 'Peixes nativos', ''], ['regras.pesosDesafio.conservacao', 'Espécies especiais', ''],
+    ['regras.pesosDesafio.adaptacao', 'Adaptação ao ambiente', '']
+  ] }
+];
+
+function renderRegras() {
+  const amb = Ambientes.lista.map((a) => `
+    <div class="campo"><span>${a.icone} ${esc(a.nome)}</span>
+      <div class="cores">
+        <label>Peixes <input type="number" min="1" max="8" step="1" data-cfg="ambientes.${a.id}.peixes" placeholder="${PADRAO_REGRAS.maxPeixesPorRodada}" style="width:4.5rem"></label>
+        <label>Meta <input type="number" min="0" max="100" step="1" data-cfg="ambientes.${a.id}.meta" placeholder="padrão" style="width:5.5rem"></label>
+      </div></div>`).join('');
+  $('#aba-regras').innerHTML = `
+    <div class="regras-topo">
+      <p class="nota">Estas regras ficam no <code>config.json</code>. Salve com <b>☁ Salvar no GitHub</b> ou <b>⬇ Baixar</b>, e confira o resultado na aba <b>🏆 Teste dos 100 pontos</b>. Campo vazio = valor padrão.</p>
+      <button class="btn sec" id="btn-padrao-regras">↺ Voltar tudo ao padrão</button>
+    </div>
+    ${CAMPOS_FORM.map((g) => `<fieldset><legend>${esc(g.titulo)}</legend><div class="grade">${g.campos.map(([cfg, rot, dica, tipo]) => tipo === 'bool'
+      ? `<label class="bool largo"><input type="checkbox" data-cfg="${cfg}" data-tipo="bool"> <b>${esc(rot)}</b> <small>${esc(dica)}</small></label>`
+      : `<label class="campo"><span>${esc(rot)}</span><input type="number" step="${tipo === 'dec' ? '0.01' : '1'}" min="0" data-cfg="${cfg}" data-tipo="${tipo || 'num'}">${dica ? `<small>${esc(dica)}</small>` : ''}</label>`).join('')}</div></fieldset>`).join('')}
+    <fieldset><legend>Ambientes do Desafio</legend><div class="grade">${amb}</div>
+      <small>Peixes: quantos peixes a rodada tem naquele ambiente. Use menos peixes onde poucos nativos vivem bem.</small></fieldset>`;
+
+  const ler = (cfg) => cfg.split('.').reduce((o, k) => (o ? o[k] : undefined), estado.config);
+  $('#aba-regras').querySelectorAll('[data-cfg]').forEach((el) => {
+    const v = ler(el.dataset.cfg);
+    if (el.dataset.tipo === 'bool') el.checked = !!v;
+    else if (el.dataset.tipo === 'pct') el.value = v == null ? '' : Math.round(v * 100);
+    else el.value = v == null ? '' : v;
+    el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', () => {
+      const partes = el.dataset.cfg.split('.');
+      let o = estado.config;
+      partes.slice(0, -1).forEach((k) => { o[k] = o[k] || {}; o = o[k]; });
+      const k = partes[partes.length - 1];
+      let valor;
+      if (el.dataset.tipo === 'bool') valor = el.checked;
+      else if (el.value === '') valor = null;
+      else valor = el.dataset.tipo === 'pct' ? Number(el.value) / 100 : Number(el.value);
+      // nas regras, vazio volta ao padrão de regras.js
+      if (valor === null && partes[0] === 'regras') valor = JSON.parse(JSON.stringify(partes.slice(1).reduce((a, p) => a[p], PADRAO_REGRAS)));
+      if (valor === null && partes[0] === 'eventos') valor = PADRAO_EV[k];
+      o[k] = valor;
+      aplicarConfigRascunho();
+      mudou();
+    });
+  });
+  $('#btn-padrao-regras').addEventListener('click', () => {
+    if (!confirm('Voltar todas as regras ao padrão?')) return;
+    estado.config = configPadrao();
+    aplicarConfigRascunho(); mudou(); renderRegras();
+  });
+}
+
+// ======================================================================
+// Aba "Teste dos 100 pontos": procura a melhor combinação em cada situação
+// ======================================================================
+const pausa = () => new Promise((r) => setTimeout(r, 0));
+
+async function rodarTeste() {
+  const area = $('#teste-resultados');
+  const especies = estado.dados.especies.filter((e) => uidsDe(e).length && Regras.GUILDAS[e.guilda_trofica]);
+  const meta = Regras.CONFIG.metaSaude;
+  const relativa = Regras.CONFIG.notaRelativa;
+  const cenarios = [{ nome: 'Monte a comunidade', icone: '🐟', ambiente: null }]
+    .concat(Ambientes.lista.map((a) => ({ nome: a.nome, icone: a.icone, ambiente: a })));
+  area.innerHTML = '<p class="nota">Calculando… (testa todas as combinações de peixes)</p>';
+  estado.testeDesatualizado = false;
+  const cartoes = [];
+  for (const c of cenarios) {
+    await pausa();
+    const metaAqui = (c.ambiente && c.ambiente.meta) || meta;
+    const vagas = (c.ambiente && c.ambiente.peixes) || Regras.CONFIG.maxPeixesPorRodada;
+    const ctx = { ambiente: c.ambiente, vagas };
+    const m = Regras.melhores(especies, ctx, vagas, 3);
+    const melhor = m.top[0];
+    if (!melhor) { cartoes.push(`<div class="teste-card ruim"><h3>${c.icone} ${esc(c.nome)}</h3><p>Sem espécies suficientes.</p></div>`); continue; }
+    const comoNota = (n) => (relativa ? (n / melhor.nota) * 100 : n);
+    const batem = m.notas.filter((n) => comoNota(n) >= metaAqui).length;
+    const fracao = batem / m.total;
+    const dificuldade = fracao < 0.01 ? 'muito difícil' : fracao < 0.05 ? 'difícil' : fracao < 0.15 ? 'médio' : 'fácil';
+    const notaMax = relativa ? 100 : Math.max(0, melhor.nota);
+
+    const avisos = [];
+    const foraDoAmbiente = melhor.especies.filter((e) => !Regras.adaptacao(e, ctx).ok);
+    const exoticos = melhor.especies.filter((e) => !e.nativo);
+    if (foraDoAmbiente.length || exoticos.length) {
+      avisos.push(`A melhor combinação precisa de ${[...foraDoAmbiente, ...exoticos].map((e) => e.nome_popular).join(', ')}, que ${foraDoAmbiente.length ? 'não vive aqui' : 'é exótico'}. Marque mais espécies em "Vive bem em" ou diminua os peixes da rodada neste ambiente.`);
+    }
+    if (c.ambiente) {
+      const nativosAqui = especies.filter((e) => e.nativo && Regras.adaptacao(e, ctx).ok).length;
+      if (nativosAqui < vagas) avisos.push(`Só ${nativosAqui} nativos vivem bem aqui para ${vagas} vagas.`);
+    }
+    if (!relativa && melhor.nota < 100) avisos.push(`Com a nota absoluta, não dá para fazer 100 aqui (máximo ${melhor.nota}). Ligue a "nota relativa" ou ajuste as espécies.`);
+    if (relativa && melhor.nota < 60) avisos.push(`Mesmo a melhor combinação tem nota ecológica baixa (${melhor.nota}). A nota relativa transforma isso em 100.`);
+    if (batem === 0) avisos.push('Nenhuma combinação bate a meta!');
+    const limites = melhor.nota < 100 ? Regras.explicar(melhor.especies, ctx).negativos.map((n) => `${n.icone} ${n.texto}`) : [];
+
+    // reagindo a um evento sobra uma vaga a menos
+    let reacao = '';
+    if (c.ambiente && vagas > 1) {
+      const r = Regras.melhores(especies, { ambiente: c.ambiente, vagas: vagas - 1 }, vagas - 1, 1).top[0];
+      if (r) reacao = `<p><b>Reagindo a um evento (${vagas - 1} peixes):</b> ${esc(r.especies.map((e) => e.nome_popular).join(', '))}</p>`;
+    }
+    // sem reagir: o melhor possível com o evento ativo
+    let eventos = '';
+    if (c.ambiente) {
+      const linhas = [];
+      for (const ev of Ambientes.eventos.filter((e) => !e.soltaExotica)) {
+        await pausa();
+        const r = Regras.melhores(especies, { ambiente: c.ambiente, evento: ev, vagas }, vagas, 1).top[0];
+        if (r) linhas.push(`<li>${ev.icone} ${esc(ev.nome.replace(/!$/, ''))}: no máximo <b>${Math.max(0, Math.round(comoNota(r.nota)))}</b></li>`);
+      }
+      eventos = `<details><summary>Se a equipe não reagir ao evento</summary><ul class="teste-eventos">${linhas.join('')}</ul></details>`;
+    }
+
+    cartoes.push(`<div class="teste-card ${avisos.length ? 'atencao' : 'bom'}">
+      <div class="teste-topo"><h3>${c.icone} ${esc(c.nome)}</h3><span class="teste-nota">${notaMax}</span></div>
+      <p class="detalhes">${vagas} peixes · meta ${metaAqui} · ${batem} de ${m.total} combinações batem a meta (${dificuldade})${relativa ? ` · nota ecológica da melhor: ${melhor.nota}` : ''}</p>
+      <p><b>🏆 Receita do ${notaMax}:</b> ${esc(melhor.especies.map((e) => e.nome_popular).join(', '))}</p>
+      ${m.top.slice(1).map((t) => `<p class="detalhes">Outra boa opção (${Math.round(comoNota(t.nota))}): ${esc(t.especies.map((e) => e.nome_popular).join(', '))}</p>`).join('')}
+      ${reacao}
+      ${avisos.map((a) => `<p class="teste-aviso">⚠️ ${esc(a)}</p>`).join('')}
+      ${limites.length ? `<details><summary>O que limita a nota ecológica</summary><ul>${limites.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></details>` : ''}
+      ${eventos}
+    </div>`);
+    area.innerHTML = cartoes.join('') + '<p class="nota">Calculando os próximos…</p>';
+  }
+  area.innerHTML = cartoes.join('');
+}
+
+// ======================================================================
+// Abas
+// ======================================================================
+function abrirAba(nome) {
+  document.querySelectorAll('.abas button').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === nome));
+  $('#aba-especies').hidden = nome !== 'especies';
+  $('#aba-regras').hidden = nome !== 'regras';
+  $('#aba-teste').hidden = nome !== 'teste';
+  if (nome === 'regras' && !$('#aba-regras').children.length) renderRegras();
+  if (nome === 'teste' && estado.testeDesatualizado !== false) rodarTeste();
+}
+document.querySelectorAll('.abas button').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.aba)));
+$('#btn-recalcular').addEventListener('click', rodarTeste);
 
 // ======================================================================
 // Validação

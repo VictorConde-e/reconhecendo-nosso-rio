@@ -125,6 +125,22 @@ Há duas formas de salvar:
 
 Qualquer pessoa pode abrir o painel, mas sem o token ninguém consegue alterar o repositório.
 
+## Sempre dá para fazer 100
+
+Com a **nota relativa**, que vem ligada, 100 pontos é o melhor rio possível com as espécies e o ambiente da rodada. No começo da rodada o jogo testa todas as combinações (5 de 14 espécies = 2.002) e guarda a melhor. O relatório final mostra essa "🏆 receita do 100". Reagir a um evento não impede o 100: o máximo é recalculado com uma vaga a menos.
+
+Tudo é configurado no **painel admin → ⚙️ Regras e pontuação** e fica salvo em `web/config.json`:
+- meta;
+- peixes por rodada, no geral e por ambiente;
+- nota relativa ligada ou desligada;
+- penalidades, pesos e chance de evento.
+
+A aba **🏆 Teste dos 100 pontos** mostra, para cada modo e ambiente:
+- a melhor combinação;
+- quantas combinações batem a meta, com a dificuldade;
+- o resultado reagindo ou não a cada evento;
+- avisos quando a receita depende de um peixe que não vive ali ou de um exótico.
+
 ## Relatório do fim da rodada
 
 O cartão final explica a rodada inteira, não só a nota:

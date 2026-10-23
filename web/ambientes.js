@@ -9,6 +9,8 @@
  *   onde:     usado nas frases ("não vive bem na represa")
  *   bloqueiaMigradores: migradores não completam o ciclo (barragem)
  *   meta:     meta de saúde própria (opcional; senão vale Regras.CONFIG.metaSaude)
+ *   peixes:   quantos peixes a rodada tem neste ambiente (opcional; senão vale maxPeixesPorRodada)
+ * Meta e peixes também podem vir do config.json (editado no painel admin).
  *   visual:   só aparência do cenário
  *
  * Quais espécies vivem bem em cada ambiente fica em especies.json (campo "ambientes").
@@ -54,7 +56,7 @@
       vale: 'Peixes de água parada, que aguentam pouco oxigênio.',
       habitats: ['remanso'],
       recursos: ['algas', 'insetos', 'detritos'],
-      meta: 65,                 // só 4 nativos vivem bem aqui
+      peixes: 4,                // poucos nativos vivem bem aqui: com 5 peixes, um teria que ser de fora
       visual: {
         agua: ['#5f8250', '#41623c', '#273f28'], areia: ['#5d4a33', '#3d2f20'], mata: '#5f8a3e',
         corrente: 0.15, pedras: 0.4, plantas: 'taboa'
@@ -71,7 +73,7 @@
       habitats: ['lago'],
       recursos: ['algas', 'insetos', 'detritos'],
       bloqueiaMigradores: true,
-      meta: 45,                 // poucos nativos aguentam a represa: é o ambiente mais difícil
+      peixes: 4,                // poucos nativos aguentam a represa: é o ambiente mais difícil
       visual: {
         agua: ['#2a78a3', '#17557f', '#0b2f4d'], mata: '#3a6b45', densidadeMata: 0.6,
         corrente: 0.1, pedras: 0.6, plantas: 'poucas', barragem: true
@@ -142,5 +144,20 @@
 
   const porId = (id) => lista.find((a) => a.id === id);
 
-  global.Ambientes = { lista, eventos, CONFIG, porId, eventoPorId };
+  // aplica a parte "ambientes" e "eventos" de um config.json (vazio/null = volta ao padrão deste arquivo)
+  const PADRAO = Object.fromEntries(lista.map((a) => [a.id, { meta: a.meta, peixes: a.peixes }]));
+  function aplicarConfig(cfg) {
+    if (!cfg) return;
+    Object.entries(cfg.ambientes || {}).forEach(([id, o]) => {
+      const a = porId(id);
+      if (!a || !o) return;
+      ['meta', 'peixes'].forEach((k) => {
+        const v = o[k] === '' || o[k] == null ? PADRAO[id][k] : Number(o[k]);
+        if (v == null || Number.isNaN(v)) delete a[k]; else a[k] = v;
+      });
+    });
+    Object.entries(cfg.eventos || {}).forEach(([k, v]) => { if (k in CONFIG) CONFIG[k] = v; });
+  }
+
+  global.Ambientes = { lista, eventos, CONFIG, porId, eventoPorId, aplicarConfig };
 })(typeof window !== 'undefined' ? window : globalThis);

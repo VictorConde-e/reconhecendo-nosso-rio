@@ -363,6 +363,9 @@
   .delta.sobe { color: #1d7a44; }
   .delta.desce { color: #b3261e; }
   .saude-passo { flex: none; min-width: 2.6rem; text-align: right; font-weight: 800; color: var(--texto-suave); }
+  .rel-receita { margin-top: .9rem; background: #fff8e1; border-radius: 16px; padding: .5rem 1rem .7rem; }
+  .rel-receita h3 { margin: .2rem 0 .3rem; }
+  .rel-receita p { margin: 0; font-size: 1.05rem; }
   .rel-criterios { margin-top: .9rem; }
   .rel-criterios summary { cursor: pointer; font-weight: 800; color: var(--texto-suave); }
   .rel-criterios .componentes-final { margin-top: .5rem; max-width: 36rem; }
@@ -530,7 +533,22 @@ const normalizarUid = (u) => String(u).toUpperCase().replace(/[^0-9A-Z-]/g, '');
 // ======================================================================
 const CHAVE_CACHE = 'reconhecendo-rio:especies';
 
+// config.json (editado no painel admin) por cima dos padrões de regras.js e ambientes.js
+async function carregarConfig() {
+  let cfg = null;
+  if (new URLSearchParams(location.search).has('rascunho')) {
+    try { cfg = JSON.parse(localStorage.getItem('reconhecendo-rio:rascunho-config') || 'null'); } catch (_) {}
+  }
+  if (!cfg) {
+    try { const r = await fetch('config.json', { cache: 'no-store' }); if (r.ok) cfg = await r.json(); } catch (_) { /* file://: fica o padrão */ }
+  }
+  Regras.aplicarConfig(cfg);
+  Ambientes.aplicarConfig(cfg);
+  cacheMelhor.clear();
+}
+
 async function carregarEspecies() {
+  await carregarConfig();
   // ?rascunho: usa a tabela que está sendo editada no painel admin (só neste navegador)
   if (new URLSearchParams(location.search).has('rascunho')) {
     try {
@@ -560,6 +578,7 @@ function usarEspecies(json) {
   const lista = Array.isArray(json) ? json : json.especies;
   if (!Array.isArray(lista)) { avisar('especies.json em formato inesperado', 'erro'); return; }
   estado.especies = lista;
+  cacheMelhor.clear();
   estado.porUid.clear();
   lista.forEach((e) => {
     if (!Regras.GUILDAS[e.guilda_trofica]) console.warn('Guilda desconhecida em', e.nome_popular, e.guilda_trofica);
@@ -694,16 +713,34 @@ const MODOS = {
   explorar: { nome: 'Conheça os peixes' }
 };
 
-// Contexto das regras: só existe no Desafio
+// Contexto das regras: vagas de peixe e máximo possível (nota relativa); ambiente e evento só no Desafio
 function contexto() {
-  if (estado.modo !== 'desafio' || !estado.ambiente) return null;
-  return { ambiente: estado.ambiente, evento: estado.evento && estado.evento.ativo ? estado.evento.def : null };
+  const vagas = vagasPeixes();
+  const ctx = { vagas, maximo: Regras.CONFIG.notaRelativa ? (melhorDaRodada(vagas) || {}).nota : undefined };
+  if (estado.modo === 'desafio' && estado.ambiente) {
+    ctx.ambiente = estado.ambiente;
+    ctx.evento = estado.evento && estado.evento.ativo ? estado.evento.def : null;
+  }
+  return ctx;
+}
+// peixes que ainda cabem na rodada (cada reação a evento ocupa uma jogada)
+const vagasPeixes = () => maxJogadas() - estado.jogadas.filter((j) => j.tipo === 'reacao').length;
+
+// Melhor combinação possível nesta rodada (sem evento): é a "receita do 100".
+// Testa todas as combinações uma vez por ambiente e número de vagas, e guarda o resultado.
+const cacheMelhor = new Map();
+function melhorDaRodada(vagas = vagasPeixes()) {
+  if (estado.modo === 'explorar' || !estado.especies.length) return null;
+  const amb = estado.modo === 'desafio' ? estado.ambiente : null;
+  const chave = (amb ? amb.id : 'livre') + '|' + vagas;
+  if (!cacheMelhor.has(chave)) cacheMelhor.set(chave, Regras.melhores(estado.especies, { ambiente: amb, vagas }, vagas, 1).top[0] || null);
+  return cacheMelhor.get(chave);
 }
 function metaAtual() {
   return (estado.modo === 'desafio' && estado.ambiente && estado.ambiente.meta) || Regras.CONFIG.metaSaude;
 }
 const avaliarAgora = () => Regras.avaliar(estado.comunidade, contexto());
-const maxJogadas = () => Regras.CONFIG.maxPeixesPorRodada;
+const maxJogadas = () => (estado.modo === 'desafio' && estado.ambiente && estado.ambiente.peixes) || Regras.CONFIG.maxPeixesPorRodada;
 const rodadaCheia = () => estado.jogadas.length >= maxJogadas();
 
 function iniciarModo(modo) {
@@ -801,7 +838,7 @@ function revelarAmbiente(amb) {
       <h2>${esc(amb.nome)}</h2>
       <p>${esc(amb.descricao)}</p>
       <p class="vale"><b>Quem vive bem aqui:</b> ${esc(amb.vale)}</p>
-      <p class="detalhes">Habitat: ${esc(hab)} · Meta: <b>${metaAtual()}</b>${amb.meta ? ' (ambiente difícil!)' : ''}</p>
+      <p class="detalhes">Habitat: ${esc(hab)} · <b>${maxJogadas()} peixes</b> nesta rodada · Meta: <b>${metaAtual()}</b></p>
       <button class="btn" id="btn-comecar">Começar!</button>
       <p class="detalhes">ou encostem o primeiro peixe no leitor</p>
     </div>`;
@@ -1072,7 +1109,7 @@ function atualizarPainel(r, novo) {
   $('#barra').setAttribute('aria-valuenow', r.saude);
   $('#barra-meta').style.left = metaAtual() + '%';
   const ctx = contexto();
-  Rio.marcarSofrendo(ctx ? estado.comunidade.filter((e) => !Regras.adaptacao(e, ctx).ok) : []);
+  Rio.marcarSofrendo(estado.comunidade.filter((e) => !Regras.adaptacao(e, ctx).ok));
 
   $('#dicas').innerHTML = r.dicas.slice(0, 2).map((d) => `<li>${esc(d)}</li>`).join('') || '<li>Comunidade em equilíbrio. Muito bem!</li>';
 
@@ -1086,7 +1123,7 @@ function esc(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&am
 // ======================================================================
 function linhaAmbiente(sp, msg) {
   const ctx = contexto();
-  if (!ctx) return '';
+  if (!ctx.ambiente) return '';
   const a = Regras.adaptacao(sp, ctx);
   if (!a.ok && a.motivo === msg) return '';   // já aparece na mensagem de entrada
   return `<dt>Aqui</dt><dd>${a.ok ? `✅ Vive bem ${esc(ctx.ambiente.onde)}` : `❌ ${esc(a.motivo)}`}</dd>`;
@@ -1616,6 +1653,20 @@ function celebrarMeta() {
   setTimeout(() => f.classList.remove('visivel'), 3500);
 }
 
+// "Receita do 100": a melhor combinação possível nesta rodada
+function receitaHtml(r) {
+  const m = melhorDaRodada();
+  if (!m) return '';
+  const nomes = m.especies.map((e) => e.nome_popular);
+  const escolhidos = estado.comunidade.filter((e) => !(estado.evento && estado.evento.solto === e));
+  const acertaram = nomes.length === escolhidos.length && m.especies.every((e) => escolhidos.includes(e));
+  return `<div class="rel-receita">
+    <h3>🏆 ${Regras.CONFIG.notaRelativa ? 'A receita do 100 aqui' : `O melhor rio possível aqui (${m.nota})`}</h3>
+    <p>${acertaram ? '🎉 Vocês encontraram a melhor combinação possível!' : 'Uma combinação que dá a nota máxima:'}
+      <b>${esc(nomes.join(', '))}</b>${estado.evento && estado.evento.ocorreu && !estado.evento.reagiu ? ' (sem o evento, ou reagindo a ele)' : ''}.</p>
+  </div>`;
+}
+
 function mostrarFimDeRodada() {
   if (!estado.rodadaEncerrada) return;
   const ctx = contexto();
@@ -1663,6 +1714,7 @@ function mostrarFimDeRodada() {
         <section class="rel-caixa ruim"><h3>❌ O que atrapalhou</h3>
           <ul>${negativos.map((p) => item(p, true)).join('') || '<li><span>Nada! Rio em equilíbrio.</span></li>'}</ul></section>
       </div>
+      ${receitaHtml(r)}
       <h3>🐟 Cada peixe</h3>
       <div class="rel-peixes">${x.peixes.map(cartaoPeixe).join('')}</div>
       ${estado.historico.length ? `<h3>📜 Como foi a rodada <small class="detalhes">(quanto cada jogada mudou a saúde)</small></h3><ol class="rel-linha">${estado.historico.map(passo).join('')}</ol>` : ''}

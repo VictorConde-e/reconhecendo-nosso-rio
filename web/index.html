@@ -239,8 +239,13 @@
   #teia-resumo .come { color: #b07a00; }
   #teia-resumo .comido { color: #c0392b; }
   .teia-faixa { fill: rgba(18, 49, 58, .025); }
-  .teia-faixa.f0 { fill: rgba(95, 156, 74, .07); }
-  .teia-faixa.f2 { fill: rgba(192, 83, 63, .05); }
+  .teia-faixa.f0 { fill: rgba(95, 156, 74, .08); }
+  .teia-faixa.f1 { fill: rgba(224, 161, 0, .06); }
+  .teia-faixa.f2 { fill: rgba(14, 143, 132, .05); }
+  .teia-faixa.f3 { fill: rgba(192, 83, 63, .06); }
+  .teia-nivel .sub { font-weight: 600; font-size: 12px; }
+  .teia-ninfa .corpo { fill: #fff; }
+  .teia-ninfa .traco { stroke: #fff; stroke-width: 1.6; fill: none; stroke-linecap: round; }
   .teia-aresta { fill: none; stroke-linecap: round; }
   .teia-aresta.alimento { stroke: rgba(95, 156, 74, .55); stroke-width: 3; }
   .teia-aresta.predacao { stroke: rgba(192, 83, 63, .6); stroke-width: 3.5; }
@@ -1691,9 +1696,9 @@ const Teia = (() => {
   const svg = $('#teia');
   const resumo = $('#teia-resumo');
   const NS = 'http://www.w3.org/2000/svg';
-  // três faixas: alimentos embaixo, peixes no meio, predadores em cima
-  const FAIXAS = ['Alimentos', 'Peixes', 'Predadores'];
-  const ICONES = { algas: '🌿', detritos: '🍂', insetos: '🦟', frutos: '🍎' };
+  // quatro níveis tróficos, de baixo para cima
+  const FAIXAS = [['Produtores e', 'matéria orgânica'], ['Consumidores', 'primários'], ['Consumidores', 'secundários'], ['Predadores', '']];
+  const ICONES = { algas: '🌿', detritos: '🍂', frutos: '🍎' };   // insetos: desenho de ninfa (abaixo)
   let conhecidos = new Set();
   let teia = { nos: [], arestas: [] };
   let sofrendo = new Set();
@@ -1751,14 +1756,24 @@ const Teia = (() => {
         : ' · ninguém aqui come ele');
   }
 
-  const faixaDe = (no) => (no.tipo === 'recurso' ? 0 : no.nivel >= 3 ? 2 : 1);
+  const faixaDe = (no) => Math.max(0, Math.min(3, no.nivel || 0));
+
+  // ninfa de inseto aquático (corpo segmentado, pernas e três "rabinhos"), desenhada em branco
+  function ninfa(g, x, y, t) {
+    const n = el('g', { transform: `translate(${x},${y}) scale(${t / 24})`, class: 'teia-ninfa' }, g);
+    el('path', { d: 'M-9,0 q-6,-2 -11,-6 M-9,0 q-6,0 -12,0 M-9,0 q-6,2 -11,6', class: 'traco' }, n);   // cercos
+    [-4, 0, 4].forEach((px) => el('path', { d: `M${px},-2 l-2,-6 M${px},2 l-2,6`, class: 'traco' }, n));   // pernas
+    el('ellipse', { cx: -3, cy: 0, rx: 7, ry: 3.2, class: 'corpo' }, n);
+    el('ellipse', { cx: 5, cy: 0, rx: 3.6, ry: 3.6, class: 'corpo' }, n);
+    el('path', { d: 'M8,-2 l4,-4 M8,2 l4,4', class: 'traco' }, n);   // antenas
+  }
 
   // ordena cada faixa pela posição média dos vizinhos, para as linhas cruzarem o mínimo
   function ordenar(faixas, x) {
     const vizinhos = (id) => teia.arestas.filter((a) => a.de === id || a.para === id).map((a) => (a.de === id ? a.para : a.de));
     const media = (id) => { const v = vizinhos(id).filter((n) => x[n] != null); return v.length ? v.reduce((s, n) => s + x[n], 0) / v.length : x[id]; };
     for (let volta = 0; volta < 4; volta++) {
-      [1, 2, 0, 1].forEach((f) => {
+      [2, 3, 1, 0, 1, 2].forEach((f) => {
         faixas[f].sort((a, b) => media(a.id) - media(b.id));
         faixas[f].forEach((no, i) => { x[no.id] = i - (faixas[f].length - 1) / 2; });
       });
@@ -1778,13 +1793,15 @@ const Teia = (() => {
       el('path', { d: 'M0,0 L10,5 L0,10 z', fill: cor }, m);
     });
 
-    const topo = 50, esq = 104, dir = W - 20;
-    const alturaFaixa = (H - topo - 10) / 3;
-    const yFaixa = (f) => topo + alturaFaixa * (2 - f) + alturaFaixa / 2;
-    // fundos das faixas e rótulos
-    FAIXAS.forEach((rot, f) => {
-      el('rect', { x: 8, y: yFaixa(f) - alturaFaixa / 2 + 3, width: W - 16, height: alturaFaixa - 6, rx: 14, class: `teia-faixa f${f}` }, svg);
-      el('text', { x: 20, y: yFaixa(f) + 5, class: 'teia-nivel' }, svg).textContent = rot;
+    const topo = 50, esq = 128, dir = W - 20;
+    const alturaFaixa = (H - topo - 12) / 4;
+    const yFaixa = (f) => topo + alturaFaixa * (3 - f) + alturaFaixa / 2;
+    // fundos das faixas e rótulos (duas linhas)
+    FAIXAS.forEach(([l1, l2], f) => {
+      el('rect', { x: 8, y: yFaixa(f) - alturaFaixa / 2 + 2, width: W - 16, height: alturaFaixa - 4, rx: 12, class: `teia-faixa f${f}` }, svg);
+      const t = el('text', { x: 18, y: yFaixa(f) + (l2 ? -2 : 5), class: 'teia-nivel' }, svg);
+      el('tspan', { x: 18 }, t).textContent = l1;
+      if (l2) el('tspan', { x: 18, dy: 15, class: 'sub' }, t).textContent = l2;
     });
 
     if (!teia.nos.length) {
@@ -1794,7 +1811,7 @@ const Teia = (() => {
       return;
     }
 
-    const faixas = [[], [], []];
+    const faixas = [[], [], [], []];
     teia.nos.forEach((no) => faixas[faixaDe(no)].push(no));
     const x = {};
     faixas.forEach((lista) => lista.forEach((no, i) => { x[no.id] = i - (lista.length - 1) / 2; }));
@@ -1804,16 +1821,17 @@ const Teia = (() => {
     const larguraUtil = dir - esq;
     const maxPorFaixa = Math.max(1, ...faixas.map((l) => l.length));
     // cartões deitados (desenho + nome lado a lado): aproveitam a largura e deixam espaço para as curvas
-    const altCarta = Math.min(alturaFaixa * 0.64, 66);
+    const altCarta = Math.min(alturaFaixa * 0.7, 62);
     const largCarta = Math.min(230, larguraUtil / maxPorFaixa - 18);
-    const largRec = Math.min(200, larguraUtil / Math.max(1, faixas[0].length) - 18);
-    const altRec = Math.min(alturaFaixa * 0.52, 48);
+    const largRec = Math.min(200, larguraUtil / Math.max(1, faixas[0].length, faixas[1].length) - 18);
+    const altRec = Math.min(alturaFaixa * 0.58, 44);
     const pos = {};
     faixas.forEach((lista, f) => {
-      const passo = Math.min(larguraUtil / Math.max(1, lista.length), (f === 0 ? largRec : largCarta) + 60);
+      const passo = Math.min(larguraUtil / Math.max(1, lista.length), Math.max(largRec, largCarta) + 50);
       const inicio = esq + larguraUtil / 2 - (passo * (lista.length - 1)) / 2;
       lista.forEach((no, i) => {
-        const w = f === 0 ? largRec : largCarta, h = f === 0 ? altRec : altCarta;
+        const rec = no.tipo === 'recurso';
+        const w = rec ? largRec : largCarta, h = rec ? altRec : altCarta;
         pos[no.id] = { x: inicio + i * passo, y: yFaixa(f), w, h, f };
       });
     });
@@ -1856,8 +1874,15 @@ const Teia = (() => {
       if (no.tipo === 'recurso') {
         const chave = no.id.replace('rec:', '');
         el('rect', { x: -p.w / 2, y: -p.h / 2, width: p.w, height: p.h, rx: p.h / 2, fill: no.cor, class: 'teia-recurso' }, g);
-        const t = el('text', { y: 6, 'text-anchor': 'middle', 'font-size': Math.max(13, Math.min(18, p.w / 8.5, p.h / 2.3)), class: 'teia-rotulo-recurso' }, g);
-        t.textContent = `${ICONES[chave] || ''} ${no.rotulo}`;
+        const fonte = Math.max(12, Math.min(17, p.w / 9.5, p.h / 2.3));
+        if (chave === 'insetos') {
+          const largTexto = no.rotulo.length * fonte * 0.55;
+          ninfa(g, -largTexto / 2 - 8, 0, fonte * 1.4);
+          el('text', { x: 10, y: fonte * 0.36, 'text-anchor': 'middle', 'font-size': fonte, class: 'teia-rotulo-recurso' }, g).textContent = no.rotulo;
+        } else {
+          el('text', { y: fonte * 0.36, 'text-anchor': 'middle', 'font-size': fonte, class: 'teia-rotulo-recurso' }, g)
+            .textContent = `${ICONES[chave] || ''} ${no.rotulo}`;
+        }
         return;
       }
       const sp = no.especie;

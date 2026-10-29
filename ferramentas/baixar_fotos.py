@@ -103,7 +103,8 @@ def main():
         destino = WEB / e["foto"]
         if args.so and not any(s in destino.stem for s in args.so):
             continue
-        if destino.exists() and not args.forcar:
+        # imagem de exemplo (foto_exemplo) conta como foto que falta
+        if destino.exists() and not args.forcar and not e.get("foto_exemplo"):
             resumo.append(f"= {e['nome_popular']}: já existe ({e['foto']})")
             continue
         try:
@@ -116,6 +117,7 @@ def main():
         except Exception as erro:  # rede, arquivo removido etc.
             resumo.append(f"! {e['nome_popular']}: erro ({erro})")
             continue
+        e.pop("foto_exemplo", None)
         e["foto_arquivo"] = arq["titulo"]
         e["foto_credito"] = arq["autor"] or "Autor desconhecido"
         e["foto_licenca"] = arq["licenca"]

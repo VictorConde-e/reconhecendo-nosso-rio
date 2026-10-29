@@ -80,10 +80,11 @@
 
   // Recursos da base da teia (não são peixes)
   const RECURSOS = {
-    algas:    { rotulo: 'Algas',          texto: 'algas',          cor: '#4caf50' },
-    detritos: { rotulo: 'Lodo e restos',  texto: 'lodo',           cor: '#8d6e63' },
-    insetos:  { rotulo: 'Insetos',        texto: 'insetos',        cor: '#ffb300' },
-    frutos:   { rotulo: 'Frutos da mata', texto: 'frutos da mata', cor: '#e57373' }
+    // nivel 0 = produtores e matéria orgânica; os insetos aquáticos já são consumidores primários
+    algas:    { rotulo: 'Algas',             texto: 'algas',             cor: '#4caf50', nivel: 0 },
+    detritos: { rotulo: 'Lodo e restos',     texto: 'lodo',              cor: '#8d6e63', nivel: 0 },
+    frutos:   { rotulo: 'Frutos da mata',    texto: 'frutos da mata',    cor: '#e57373', nivel: 0 },
+    insetos:  { rotulo: 'Insetos aquáticos', texto: 'insetos aquáticos', cor: '#e0a100', nivel: 1, come: ['algas', 'detritos'] }
   };
 
   const HABITATS = {
@@ -143,8 +144,15 @@
       });
     });
 
+    // os insetos comem algas e lodo: liga a base até eles (mostra a cadeia alga → inseto → peixe)
+    if (recursosUsados.has('insetos')) {
+      RECURSOS.insetos.come.filter((r) => disponiveis.includes(r)).forEach((r) => {
+        recursosUsados.add(r);
+        arestas.push({ de: 'rec:' + r, para: 'rec:insetos', tipo: 'recurso' });
+      });
+    }
     recursosUsados.forEach((r) => {
-      nos.push({ id: 'rec:' + r, tipo: 'recurso', rotulo: RECURSOS[r].rotulo, cor: RECURSOS[r].cor, nivel: 0 });
+      nos.push({ id: 'rec:' + r, tipo: 'recurso', rotulo: RECURSOS[r].rotulo, cor: RECURSOS[r].cor, nivel: RECURSOS[r].nivel || 0 });
     });
 
     return { nos, arestas };
@@ -199,6 +207,9 @@
     const temBase = comunidade.some(ehBase);
     const notaBase = temBase ? 1 : 0;
     if (!temBase && comunidade.length >= 2) dicas.push({ prioridade: 2, texto: 'Ninguém limpa o fundo do rio. Um cascudo comeria o lodo e as algas.' });
+    if (comunidade.length >= 3 && !comunidade.some((e) => (GUILDAS[e.guilda_trofica] || {}).nivel === 2)) {
+      dicas.push({ prioridade: 2, texto: 'Falta um consumidor secundário: um peixe que come insetos, como o lambari ou a piaba.' });
+    }
     if (guildas.length < 3 && comunidade.length >= 3) dicas.push({ prioridade: 1, texto: 'Os peixes comem quase as mesmas coisas. Misture dietas diferentes!' });
 
     return { nota: 0.4 * notaGuildas + 0.4 * notaPiramide + 0.2 * notaBase, dicas, penalidade };
@@ -415,12 +426,17 @@
     const predadores = sobreviventes.filter(ehPredador);
     const famintos = predadores.filter((p) => !teia.arestas.some((x) => x.para === idDe(p) && x.tipo === 'peixe'));
     if (n >= 3 && !predadores.length) {
-      negativos.push({ icone: '🦈', texto: 'Nenhum predador de topo: sem ele, os peixes pequenos se multiplicam demais e acabam com a comida.', pontos: CONFIG.penalidadeSemPredador });
+      negativos.push({ icone: '🐟', texto: 'Nenhum predador de topo: sem ele, os peixes pequenos se multiplicam demais e acabam com a comida.', pontos: CONFIG.penalidadeSemPredador });
     } else if (predadores.length && predadores.length / n > CONFIG.fracaoMaxPredadores) {
-      negativos.push({ icone: '🦈', texto: `Predadores demais (${juntar(predadores.map((p) => p.nome_popular))}) para poucas presas: a cadeia desequilibra.`, pontos: CONFIG.penalidadeExcessoPredadores });
+      negativos.push({ icone: '🐟', texto: `Predadores demais (${juntar(predadores.map((p) => p.nome_popular))}) para poucas presas: a cadeia desequilibra.`, pontos: CONFIG.penalidadeExcessoPredadores });
     } else if (predadores.length && !famintos.length) {
-      positivos.push({ icone: '🦈', texto: `Cadeia com predador de topo (${juntar(predadores.map((p) => p.nome_popular))}) controlando as presas.` });
+      positivos.push({ icone: '🐟', texto: `Cadeia com predador de topo (${juntar(predadores.map((p) => p.nome_popular))}) controlando as presas.` });
     }
+    // os três níveis de consumidores entre os peixes que sobrevivem
+    const temNivel = (n) => sobreviventes.some((e) => (GUILDAS[e.guilda_trofica] || {}).nivel === n);
+    const faltaNivel = [[1, 'consumidor primário (quem come alga e lodo)'], [2, 'consumidor secundário (quem come insetos e peixinhos)'], [3, 'predador']].filter(([nv]) => !temNivel(nv));
+    if (n >= 3 && !faltaNivel.length) positivos.push({ icone: '🔗', texto: 'Cadeia completa: consumidores primários, secundários e predador.' });
+    else if (n >= 3 && faltaNivel.some(([nv]) => nv < 3)) negativos.push({ icone: '🔗', texto: `A cadeia ficou incompleta: faltou ${juntar(faltaNivel.filter(([nv]) => nv < 3).map(([, t]) => t))}.` });
     if (famintos.length) {
       negativos.push({ icone: '🍽️', texto: `${juntar(famintos.map((p) => p.nome_popular))} ficou sem presa menor para comer.`, pontos: famintos.length * CONFIG.penalidadePredadorFaminto });
     }

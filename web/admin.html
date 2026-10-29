@@ -225,7 +225,7 @@ const PORTES = { pequeno: 'Pequeno', medio: 'Médio', grande: 'Grande' };
 // ordem dos campos no arquivo (campos desconhecidos são mantidos no fim)
 const ORDEM = ['uid', 'tecla', 'nome_popular', 'nome_cientifico', 'guilda_trofica', 'dieta', 'habitat', 'ambientes', 'sofre_com',
   'migrador', 'status_ameaca', 'nativo', 'endemico', 'tentador', 'por_que_tenta', 'porte', 'come', 'descricao_curta',
-  'imagem', 'foto', 'foto_busca', 'foto_arquivo', 'foto_credito', 'foto_licenca', 'foto_fonte', 'validar', 'notas_validacao', 'visual'];
+  'imagem', 'foto', 'foto_exemplo', 'foto_busca', 'foto_arquivo', 'foto_credito', 'foto_licenca', 'foto_fonte', 'validar', 'notas_validacao', 'visual'];
 
 const estado = { dados: null, original: '', config: null, configOriginal: '', atual: -1, sujo: false, filtro: '', testeDesatualizado: true };
 
@@ -692,6 +692,7 @@ function problemas(e, i) {
   if (e.guilda_trofica === 'piscivoro' && e.come && !e.come.includes('peixes')) aviso('É piscívoro, mas a dieta marcada não inclui "peixes".');
   if ((e.descricao_curta || '').length > 220) aviso('Descrição longa: pode não caber na ficha em telas menores.');
   if (!e.nativo && e.tentador && !e.por_que_tenta) aviso('Exótico "tentador" sem o motivo de parecer boa ideia.');
+  if (e.foto_exemplo) aviso('A foto ainda é uma imagem de exemplo: troque pela foto real (e desmarque "foto de exemplo").');
   if (e.validar) aviso('Marcado para validar' + (e.notas_validacao ? `: ${e.notas_validacao}` : '.'));
   return lista;
 }
@@ -804,6 +805,7 @@ function formulario() {
     <label class="campo"><span>Crédito da foto</span><input type="text" data-campo="foto_credito"></label>
     <label class="campo"><span>Licença</span><input type="text" data-campo="foto_licenca" placeholder="CC BY-SA 4.0"></label>
     <label class="campo"><span>Fonte (link)</span><input type="url" data-campo="foto_fonte"></label>
+    <label class="bool"><input type="checkbox" data-campo="foto_exemplo" data-tipo="bool"> Foto ainda é de exemplo</label>
   </div></fieldset>
 
   <fieldset><legend>Aparência no jogo</legend><div class="grade">

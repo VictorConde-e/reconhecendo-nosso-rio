@@ -71,7 +71,7 @@
     flex: 1; min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) clamp(320px, 27vw, 560px);
-    grid-template-rows: minmax(0, 62fr) minmax(0, 38fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
     gap: .9rem; padding: .9rem;
   }
   .caixa {
@@ -238,20 +238,34 @@
   #teia-resumo b { color: var(--texto); }
   #teia-resumo .come { color: #b07a00; }
   #teia-resumo .comido { color: #c0392b; }
+  .teia-faixa { fill: rgba(18, 49, 58, .025); }
+  .teia-faixa.f0 { fill: rgba(95, 156, 74, .07); }
+  .teia-faixa.f2 { fill: rgba(192, 83, 63, .05); }
   .teia-aresta { fill: none; stroke-linecap: round; }
-  .teia-aresta.apagada { stroke: rgba(18, 49, 58, .1); stroke-width: 1.5; }
-  .teia-aresta.fraca { stroke: rgba(18, 49, 58, .3); stroke-width: 2; }
-  .teia-aresta.come { stroke: #e0a100; stroke-width: 4.5; }
-  .teia-aresta.comido { stroke: #d64545; stroke-width: 4.5; }
-  .teia-aresta.nova { stroke-dasharray: 900; stroke-dashoffset: 900; animation: desenha 1.2s ease-out forwards; }
+  .teia-aresta.alimento { stroke: rgba(95, 156, 74, .55); stroke-width: 3; }
+  .teia-aresta.predacao { stroke: rgba(192, 83, 63, .6); stroke-width: 3.5; }
+  .teia-aresta.suave { opacity: .4; }
+  .teia-aresta.come { stroke: #e0a100; stroke-width: 5; }
+  .teia-aresta.comido { stroke: #d64545; stroke-width: 5; }
+  /* pontinhos andando da comida para quem come */
+  .teia-aresta.fluxo { stroke-dasharray: 2 12; animation: fluxo .9s linear infinite; }
+  @keyframes fluxo { to { stroke-dashoffset: -14; } }
+  .teia-aresta.nova:not(.fluxo) { stroke-dasharray: 900; stroke-dashoffset: 900; animation: desenha 1.2s ease-out forwards; }
+  .teia-carta { fill: #fff; stroke: #0e8f84; stroke-width: 2.5; filter: drop-shadow(0 2px 3px rgba(0,0,0,.12)); }
+  .teia-no.exotico .teia-carta { stroke: #d64545; }
+  .teia-no.sofrendo .teia-carta { stroke-dasharray: 6 5; fill: #f4f4f4; }
+  .teia-no.sofrendo image { opacity: .45; }
+  .teia-no.foco .teia-carta { stroke: #e0a100; stroke-width: 4; fill: #fffaf0; }
+  .teia-nome { fill: var(--texto); font-weight: 800; font-family: var(--fonte); }
+  .teia-recurso { opacity: .92; }
+  .teia-rotulo-recurso { fill: #fff; font-weight: 800; font-family: var(--fonte); }
   @keyframes desenha { to { stroke-dashoffset: 0; } }
   .teia-no { transition: opacity .3s; }
   .teia-no.peixe { cursor: pointer; }
-  .teia-no.longe { opacity: .4; }
-  .teia-no text { fill: var(--texto); font-weight: 800; font-family: var(--fonte); paint-order: stroke; stroke: #fff; stroke-width: 4px; }
+  .teia-no.longe { opacity: .55; }
   .teia-no.novo { animation: pop .6s cubic-bezier(.2,.9,.3,1.6); transform-box: fill-box; transform-origin: center; }
   @keyframes pop { from { transform: scale(0); } }
-  .teia-nivel { fill: var(--texto-suave); font-size: 13px; font-weight: 700; }
+  .teia-nivel { fill: var(--texto-suave); font-size: 14px; font-weight: 800; }
   .teia-legenda { fill: var(--texto-suave); font-size: 14px; font-weight: 700; }
 
   @media (max-width: 900px) {
@@ -1303,11 +1317,12 @@ function atualizarPainel(r, novo) {
   $('#barra').setAttribute('aria-valuenow', r.saude);
   $('#barra-meta').style.left = metaAtual() + '%';
   const ctx = contexto();
-  Rio.marcarSofrendo(estado.comunidade.filter((e) => !Regras.adaptacao(e, ctx).ok));
+  const naoSobrevivem = estado.comunidade.filter((e) => !Regras.adaptacao(e, ctx).ok);
+  Rio.marcarSofrendo(naoSobrevivem);
 
   $('#dicas').innerHTML = r.dicas.slice(0, 2).map((d) => `<li>${esc(d)}</li>`).join('') || '<li>Comunidade em equilíbrio. Muito bem!</li>';
 
-  Teia.desenhar(r.teia, novo);
+  Teia.desenhar(r.teia, novo, naoSobrevivem);
 }
 
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -1676,10 +1691,14 @@ const Teia = (() => {
   const svg = $('#teia');
   const resumo = $('#teia-resumo');
   const NS = 'http://www.w3.org/2000/svg';
-  const NIVEIS = ['Alimentos', 'Comem a base', 'Consumidores', 'Predadores'];
+  // três faixas: alimentos embaixo, peixes no meio, predadores em cima
+  const FAIXAS = ['Alimentos', 'Peixes', 'Predadores'];
+  const ICONES = { algas: '🌿', detritos: '🍂', insetos: '🦟', frutos: '🍎' };
   let conhecidos = new Set();
   let teia = { nos: [], arestas: [] };
+  let sofrendo = new Set();
   let foco = null;   // id do peixe em destaque: o último que entrou, ou o que foi tocado na teia
+  const imagens = new Map();
 
   function el(tag, attrs, pai) {
     const e = document.createElementNS(NS, tag);
@@ -1688,9 +1707,24 @@ const Teia = (() => {
     return e;
   }
 
+  // desenho do peixe (o mesmo do rio) como imagem, guardado para não redesenhar sempre
+  function imagemPeixe(sp) {
+    const chave = Regras.idDe(sp) + JSON.stringify(sp.visual || {});
+    if (!imagens.has(chave)) {
+      const c = document.createElement('canvas');
+      c.width = 240; c.height = 120;
+      const g = c.getContext('2d');
+      g.translate(120, 60);
+      Peixe.desenhar(g, sp, 190, 0.6);
+      imagens.set(chave, c.toDataURL());
+    }
+    return imagens.get(chave);
+  }
+
   // Chamado pelo painel a cada mudança na comunidade
-  function atualizar(novaTeia, novo) {
+  function atualizar(novaTeia, novo, naoSobrevivem = []) {
     teia = novaTeia;
+    sofrendo = new Set(naoSobrevivem.map(Regras.idDe));
     const peixes = teia.nos.filter((n) => n.tipo === 'peixe');
     if (novo) foco = Regras.idDe(novo);
     else if (!peixes.some((n) => n.id === foco)) foco = peixes.length ? peixes[peixes.length - 1].id : null;
@@ -1717,76 +1751,102 @@ const Teia = (() => {
         : ' · ninguém aqui come ele');
   }
 
+  const faixaDe = (no) => (no.tipo === 'recurso' ? 0 : no.nivel >= 3 ? 2 : 1);
+
+  // ordena cada faixa pela posição média dos vizinhos, para as linhas cruzarem o mínimo
+  function ordenar(faixas, x) {
+    const vizinhos = (id) => teia.arestas.filter((a) => a.de === id || a.para === id).map((a) => (a.de === id ? a.para : a.de));
+    const media = (id) => { const v = vizinhos(id).filter((n) => x[n] != null); return v.length ? v.reduce((s, n) => s + x[n], 0) / v.length : x[id]; };
+    for (let volta = 0; volta < 4; volta++) {
+      [1, 2, 0, 1].forEach((f) => {
+        faixas[f].sort((a, b) => media(a.id) - media(b.id));
+        faixas[f].forEach((no, i) => { x[no.id] = i - (faixas[f].length - 1) / 2; });
+      });
+    }
+  }
+
   function desenhar() {
     const r = svg.getBoundingClientRect();
-    const W = Math.max(300, r.width), H = Math.max(160, r.height);
+    const W = Math.max(320, r.width), H = Math.max(200, r.height);
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     svg.replaceChildren();
     escreverResumo();
 
     const defs = el('defs', {}, svg);
-    [['seta-fraca', 'rgba(18,49,58,.4)'], ['seta-come', '#e0a100'], ['seta-comido', '#d64545']].forEach(([id, cor]) => {
-      const m = el('marker', { id, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse' }, defs);
+    [['seta-alimento', '#5f9c4a'], ['seta-predacao', '#c0533f'], ['seta-come', '#e0a100'], ['seta-comido', '#d64545'], ['seta-apagada', 'rgba(18,49,58,.25)']].forEach(([id, cor]) => {
+      const m = el('marker', { id, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto-start-reverse' }, defs);
       el('path', { d: 'M0,0 L10,5 L0,10 z', fill: cor }, m);
     });
 
-    const topo = 78, base = H - 30, esq = 130, dir = W - 40;
-    const yNivel = (n) => base - (n / 3) * (base - topo);
-    NIVEIS.forEach((rot, n) => {
-      el('line', { x1: esq - 10, x2: dir + 20, y1: yNivel(n), y2: yNivel(n), stroke: 'rgba(18,49,58,.07)', 'stroke-width': 1 }, svg);
-      el('text', { x: 14, y: yNivel(n) + 4, class: 'teia-nivel' }, svg).textContent = rot;
+    const topo = 50, esq = 104, dir = W - 20;
+    const alturaFaixa = (H - topo - 10) / 3;
+    const yFaixa = (f) => topo + alturaFaixa * (2 - f) + alturaFaixa / 2;
+    // fundos das faixas e rótulos
+    FAIXAS.forEach((rot, f) => {
+      el('rect', { x: 8, y: yFaixa(f) - alturaFaixa / 2 + 3, width: W - 16, height: alturaFaixa - 6, rx: 14, class: `teia-faixa f${f}` }, svg);
+      el('text', { x: 20, y: yFaixa(f) + 5, class: 'teia-nivel' }, svg).textContent = rot;
     });
 
     if (!teia.nos.length) {
-      el('text', { x: W / 2, y: H / 2, 'text-anchor': 'middle', class: 'teia-legenda' }, svg)
-        .textContent = 'A teia aparece aqui conforme os peixes entram no rio';
+      el('text', { x: W / 2, y: yFaixa(1) + 6, 'text-anchor': 'middle', class: 'teia-legenda' }, svg)
+        .textContent = 'A rede aparece aqui conforme os peixes entram no rio';
       conhecidos = new Set();
       return;
     }
 
-    // Cada peixe ganha sua própria coluna (na ordem em que entrou) e fica na altura do seu nível,
-    // assim nenhum nó cobre outro. Alimentos: ordenados pela posição de quem os come,
-    // para as setas cruzarem o mínimo possível.
-    const pos = {};
-    const peixes = teia.nos.filter((x) => x.tipo === 'peixe');
-    peixes.forEach((no, i) => { pos[no.id] = { x: esq + (i + 0.5) * ((dir - esq) / peixes.length), y: yNivel(no.nivel) }; });
-    const recursos = teia.nos.filter((x) => x.tipo === 'recurso').map((no) => {
-      const xs = teia.arestas.filter((a) => a.de === no.id && pos[a.para]).map((a) => pos[a.para].x);
-      return { no, media: xs.reduce((s, x) => s + x, 0) / (xs.length || 1) };
-    }).sort((a, b) => a.media - b.media);
-    recursos.forEach(({ no }, i) => { pos[no.id] = { x: esq + (i + 0.5) * ((dir - esq) / recursos.length), y: yNivel(0) }; });
+    const faixas = [[], [], []];
+    teia.nos.forEach((no) => faixas[faixaDe(no)].push(no));
+    const x = {};
+    faixas.forEach((lista) => lista.forEach((no, i) => { x[no.id] = i - (lista.length - 1) / 2; }));
+    ordenar(faixas, x);
 
-    const raio = Math.max(18, Math.min(30, H / 10));
-    const larguraRecurso = ((dir - esq) / Math.max(1, recursos.length)) * 0.92;
+    // tamanhos: cartões grandes, mas cabendo na largura
+    const larguraUtil = dir - esq;
+    const maxPorFaixa = Math.max(1, ...faixas.map((l) => l.length));
+    // cartões deitados (desenho + nome lado a lado): aproveitam a largura e deixam espaço para as curvas
+    const altCarta = Math.min(alturaFaixa * 0.64, 66);
+    const largCarta = Math.min(230, larguraUtil / maxPorFaixa - 18);
+    const largRec = Math.min(200, larguraUtil / Math.max(1, faixas[0].length) - 18);
+    const altRec = Math.min(alturaFaixa * 0.52, 48);
+    const pos = {};
+    faixas.forEach((lista, f) => {
+      const passo = Math.min(larguraUtil / Math.max(1, lista.length), (f === 0 ? largRec : largCarta) + 60);
+      const inicio = esq + larguraUtil / 2 - (passo * (lista.length - 1)) / 2;
+      lista.forEach((no, i) => {
+        const w = f === 0 ? largRec : largCarta, h = f === 0 ? altRec : altCarta;
+        pos[no.id] = { x: inicio + i * passo, y: yFaixa(f), w, h, f };
+      });
+    });
+
     const vizinhos = new Set([foco]);
     teia.arestas.forEach((a) => { if (a.de === foco) vizinhos.add(a.para); if (a.para === foco) vizinhos.add(a.de); });
 
-    // Setas (da comida para quem come). As do peixe em foco ficam fortes;
-    // peixe-come-peixe fica fraca; peixe-come-alimento dos outros fica quase apagada.
-    const camadas = { apagada: el('g', {}, svg), fraca: el('g', {}, svg), forte: el('g', {}, svg) };
+    // ligações: curvas que sobem da comida para quem come
+    const camadas = { apagada: el('g', {}, svg), normal: el('g', {}, svg), forte: el('g', {}, svg) };
     teia.arestas.forEach((a) => {
       const p1 = pos[a.de], p2 = pos[a.para];
       if (!p1 || !p2) return;
       let classe, camada, seta;
-      if (a.para === foco) { classe = 'come'; camada = 'forte'; seta = 'seta-come'; }
-      else if (a.de === foco) { classe = 'comido'; camada = 'forte'; seta = 'seta-comido'; }
-      else if (a.tipo === 'peixe') { classe = 'fraca'; camada = 'fraca'; seta = 'seta-fraca'; }
-      else { classe = 'apagada'; camada = 'apagada'; seta = null; }
-
-      const dx = p2.x - p1.x, dy = p2.y - p1.y;
-      const d = Math.hypot(dx, dy) || 1;
-      const r1 = a.tipo === 'recurso' ? raio * 0.75 : raio;
-      const x1 = p1.x + (dx / d) * r1, y1 = p1.y + (dy / d) * r1;
-      const x2 = p2.x - (dx / d) * (raio + 5), y2 = p2.y - (dy / d) * (raio + 5);
-      const k = Math.abs(dy) < 5 ? -45 * Math.sign(dx || 1) : 16;   // mesmo nível: arco para cima
-      const cx = (x1 + x2) / 2 - (dy / d) * k, cy = (y1 + y2) / 2 + (dx / d) * k;
+      if (a.para === foco) { classe = 'come fluxo'; camada = 'forte'; seta = 'seta-come'; }
+      else if (a.de === foco) { classe = 'comido fluxo'; camada = 'forte'; seta = 'seta-comido'; }
+      else {
+        const tipo = a.tipo === 'peixe' ? 'predacao' : 'alimento';
+        classe = tipo + (foco ? ' suave' : ''); camada = 'normal'; seta = 'seta-' + tipo;
+      }
+      let d;
+      if (p1.f < p2.f) {
+        const y1 = p1.y - p1.h / 2, y2 = p2.y + p2.h / 2 + 4, meio = (y1 + y2) / 2;
+        d = `M${p1.x},${y1} C${p1.x},${meio} ${p2.x},${meio} ${p2.x},${y2}`;
+      } else {
+        // mesma faixa (ex.: onívoro que come peixe pequeno): arco por cima
+        const y1 = p1.y - p1.h / 2, y2 = p2.y - p2.h / 2 - 4, alto = Math.min(y1, y2) - alturaFaixa * 0.45;
+        d = `M${p1.x},${y1} C${p1.x},${alto} ${p2.x},${alto} ${p2.x},${y2}`;
+      }
       const chave = a.de + '>' + a.para;
-      const attrs = { d: `M${x1},${y1} Q${cx},${cy} ${x2},${y2}`, class: `teia-aresta ${classe}` + (conhecidos.has(chave) || camada === 'apagada' ? '' : ' nova') };
-      if (seta) attrs['marker-end'] = `url(#${seta})`;
-      el('path', attrs, camadas[camada]);
+      el('path', { d, class: `teia-aresta ${a.tipo} ${classe}` + (conhecidos.has(chave) ? '' : ' nova'), 'marker-end': `url(#${seta})` }, camadas[camada]);
     });
 
-    // Nós
+    // cartões
     teia.nos.forEach((no) => {
       const p = pos[no.id];
       const classes = ['teia-no', no.tipo];
@@ -1794,30 +1854,45 @@ const Teia = (() => {
       if (foco && !vizinhos.has(no.id)) classes.push('longe');
       const g = el('g', { class: classes.join(' '), transform: `translate(${p.x},${p.y})` }, svg);
       if (no.tipo === 'recurso') {
-        const larg = Math.min(raio * 3.4, larguraRecurso);
-        el('rect', { x: -larg / 2, y: -raio * 0.62, width: larg, height: raio * 1.24, rx: 10, fill: no.cor }, g);
-        const t = el('text', { y: 5, 'text-anchor': 'middle', 'font-size': Math.max(10, Math.min(raio * 0.52, larg / 8)) }, g);
-        t.textContent = no.rotulo;
-        t.setAttribute('stroke', 'none'); t.setAttribute('fill', '#fff');
-      } else {
-        const sp = no.especie;
-        const emFoco = no.id === foco;
-        if (emFoco) el('circle', { r: raio + 7, fill: 'rgba(224,161,0,.18)' }, g);
-        el('circle', { r: raio, fill: '#fff', stroke: sp.nativo ? '#0e8f84' : '#d64545', 'stroke-width': emFoco ? 4 : 2.5 }, g);
-        const c = (sp.visual && sp.visual.cor) || '#9fb8c0';
-        const s = raio / 26;
-        el('ellipse', { cx: 3 * s, cy: 0, rx: 14 * s, ry: 7 * s, fill: c }, g);
-        el('path', { d: `M${-10 * s},0 L${-19 * s},${-7 * s} L${-19 * s},${7 * s} z`, fill: c }, g);
-        el('circle', { cx: 11 * s, cy: -2 * s, r: 1.8 * s, fill: '#111' }, g);
-        el('text', { y: no.nivel === 1 ? -raio - 8 : raio + 17, 'text-anchor': 'middle', 'font-size': Math.max(13, raio * 0.6) }, g)
-          .textContent = sp.nome_popular + (sp.nativo ? '' : ' ⚠');
-        el('title', {}, g).textContent = 'Tocar para destacar';
-        g.addEventListener('click', () => { foco = no.id; desenhar(); });
+        const chave = no.id.replace('rec:', '');
+        el('rect', { x: -p.w / 2, y: -p.h / 2, width: p.w, height: p.h, rx: p.h / 2, fill: no.cor, class: 'teia-recurso' }, g);
+        const t = el('text', { y: 6, 'text-anchor': 'middle', 'font-size': Math.max(13, Math.min(18, p.w / 8.5, p.h / 2.3)), class: 'teia-rotulo-recurso' }, g);
+        t.textContent = `${ICONES[chave] || ''} ${no.rotulo}`;
+        return;
       }
+      const sp = no.especie;
+      const morto = sofrendo.has(no.id);
+      g.classList.add(sp.nativo ? 'nativo' : 'exotico');
+      if (morto) g.classList.add('sofrendo');
+      if (no.id === foco) g.classList.add('foco');
+      el('rect', { x: -p.w / 2, y: -p.h / 2, width: p.w, height: p.h, rx: 16, class: 'teia-carta' }, g);
+      const largImg = Math.min(p.w * 0.42, p.h * 2);
+      el('image', { href: imagemPeixe(sp), x: -p.w / 2 + 6, y: -p.h / 2 + 4, width: largImg, height: p.h - 8, preserveAspectRatio: 'xMidYMid meet' }, g);
+      // nome ao lado do desenho; nome comprido quebra em duas linhas no hífen ou espaço
+      const espaco = p.w - largImg - 22;
+      const cabe = (linhas, max) => Math.min(max, espaco / (Math.max(...linhas.map((l) => l.length)) * 0.56));
+      let linhas = [sp.nome_popular];
+      let fonte = cabe(linhas, Math.min(19, p.h / 2.6));
+      const corte = sp.nome_popular.search(/[- ]/);
+      if (fonte < 14 && corte > 0) {
+        const meio = sp.nome_popular.length / 2;
+        const cortes = [...sp.nome_popular.matchAll(/[- ]/g)].map((m) => m.index);
+        const i = cortes.reduce((m, c) => (Math.abs(c - meio) < Math.abs(m - meio) ? c : m), cortes[0]);
+        linhas = [sp.nome_popular.slice(0, i + (sp.nome_popular[i] === '-' ? 1 : 0)), sp.nome_popular.slice(i + 1)];
+        fonte = cabe(linhas, Math.min(17, p.h / 3.2));
+      }
+      fonte = Math.max(11, fonte);
+      const txt = el('text', { x: -p.w / 2 + largImg + 12, y: fonte * 0.36 - (linhas.length - 1) * fonte * 0.55, 'font-size': fonte, class: 'teia-nome' }, g);
+      linhas.forEach((l, k) => { el('tspan', { x: -p.w / 2 + largImg + 12, dy: k ? fonte * 1.1 : 0 }, txt).textContent = l; });
+      if (!sp.nativo || morto) {
+        el('text', { x: p.w / 2 - 6, y: -p.h / 2 + 17, 'text-anchor': 'end', 'font-size': 14 }, g).textContent = morto ? '😣' : '⚠️';
+      }
+      el('title', {}, g).textContent = `${sp.nome_popular}${morto ? ' (não sobrevive aqui)' : ''}: toque para destacar`;
+      g.addEventListener('click', () => { foco = no.id; desenhar(); });
     });
 
-    el('text', { x: 14, y: H - 8, class: 'teia-legenda' }, svg)
-      .textContent = 'A seta aponta para quem come';
+    el('text', { x: W - 18, y: H - 6, 'text-anchor': 'end', class: 'teia-legenda' }, svg)
+      .textContent = 'A seta vai da comida para quem come';
 
     conhecidos = new Set([...teia.arestas.map((a) => a.de + '>' + a.para), ...teia.nos.map((n) => 'no:' + n.id)]);
   }

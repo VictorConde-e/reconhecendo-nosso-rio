@@ -13,11 +13,13 @@
     "ambientes: onde a espécie vive bem (cabeceira | planicie | brejo | represa), usado no modo Desafio. Ver ambientes.js.",
     "sofre_com: eventos do Desafio que esta espécie não aguenta (desmatamento | esgoto | seca). Ver ambientes.js.",
     "foto: foto real mostrada embaixo da descrição. Rode ferramentas/baixar_fotos.py para buscar no Wikimedia Commons, ou coloque uma foto própria com esse nome e preencha foto_credito e foto_licenca.",
-    "foto_busca: termo usado pelo script para achar a foto. Para escolher um arquivo exato, crie foto_arquivo com o nome do arquivo no Commons (ex.: 'File:Hoplias malabaricus.jpg')."
+    "foto_busca: termo usado pelo script para achar a foto. Para escolher um arquivo exato, crie foto_arquivo com o nome do arquivo no Commons (ex.: 'File:Hoplias malabaricus.jpg').",
+    "tecla: tecla do teclado (1 a 9 e 0) que escolhe este peixe no jogo. Só os peixes com tecla entram no jogo no modo teclado."
   ],
   "especies": [
     {
       "uid": "SIM-01",
+      "tecla": "1",
       "nome_popular": "Lambari",
       "nome_cientifico": "Astyanax spp.",
       "guilda_trofica": "onivoro",
@@ -61,6 +63,7 @@
     },
     {
       "uid": "SIM-02",
+      "tecla": "2",
       "nome_popular": "Traíra",
       "nome_cientifico": "Hoplias malabaricus",
       "guilda_trofica": "piscivoro",
@@ -98,6 +101,7 @@
     },
     {
       "uid": "SIM-03",
+      "tecla": "3",
       "nome_popular": "Cascudo",
       "nome_cientifico": "Hypostomus sp.",
       "guilda_trofica": "detritivoro",
@@ -136,6 +140,7 @@
     },
     {
       "uid": "SIM-04",
+      "tecla": "4",
       "nome_popular": "Acará",
       "nome_cientifico": "Geophagus brasiliensis",
       "guilda_trofica": "onivoro",
@@ -178,6 +183,7 @@
     },
     {
       "uid": "SIM-05",
+      "tecla": "5",
       "nome_popular": "Piaba-azul",
       "nome_cientifico": "Mimagoniates microlepis",
       "guilda_trofica": "insetivoro",
@@ -217,6 +223,7 @@
     },
     {
       "uid": "SIM-07",
+      "tecla": "6",
       "nome_popular": "Cambeva",
       "nome_cientifico": "Trichomycterus spp.",
       "guilda_trofica": "insetivoro",
@@ -255,6 +262,7 @@
     },
     {
       "uid": "SIM-08",
+      "tecla": "7",
       "nome_popular": "Peixe-das-nuvens",
       "nome_cientifico": "Notholebias minimus",
       "guilda_trofica": "insetivoro",
@@ -292,6 +300,7 @@
     },
     {
       "uid": "SIM-09",
+      "tecla": "8",
       "nome_popular": "Peixe-flor",
       "nome_cientifico": "Awaous tajasica",
       "guilda_trofica": "onivoro",
@@ -461,6 +470,7 @@
     },
     {
       "uid": "SIM-10",
+      "tecla": "9",
       "nome_popular": "Tilápia",
       "nome_cientifico": "Coptodon rendalli / Oreochromis niloticus",
       "guilda_trofica": "herbivoro",
@@ -505,6 +515,7 @@
     },
     {
       "uid": "SIM-11",
+      "tecla": "0",
       "nome_popular": "Tucunaré",
       "nome_cientifico": "Cichla spp.",
       "guilda_trofica": "piscivoro",

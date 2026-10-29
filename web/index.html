@@ -375,6 +375,58 @@
     .rel-topo h2 { font-size: 1.7rem; }
     .rel-topo .num { font-size: 3.4rem; }
   }
+
+  /* ---------- Barra de peixes (teclado/mouse) ---------- */
+  #cardapio { display: none; gap: .5rem; padding: .5rem .9rem .7rem; border-top: 1px solid var(--painel-borda); background: #fff; }
+  body[data-modo][data-entrada="teclado"] #cardapio, body[data-modo][data-entrada="ambos"] #cardapio { display: flex; }
+  body[data-modo="explorar"] #cardapio { display: flex; }
+  .carta { flex: 1; min-width: 0; position: relative; display: flex; flex-direction: column; align-items: center; gap: .1rem;
+    background: var(--painel); border: 2px solid var(--painel-borda); border-radius: 14px; padding: .35rem .3rem .4rem; color: var(--texto);
+    transition: transform .12s, border-color .12s; }
+  .carta:hover { border-color: var(--destaque); transform: translateY(-2px); }
+  .carta kbd { position: absolute; top: .3rem; left: .4rem; background: var(--texto); color: #fff; font: 800 1.15rem var(--fonte-titulo);
+    min-width: 1.8rem; height: 1.8rem; line-height: 1.8rem; border-radius: 8px; text-align: center; }
+  .carta canvas { width: 100%; max-width: 150px; height: auto; aspect-ratio: 9 / 4; }
+  .carta span { font-weight: 800; font-size: .95rem; text-align: center; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  .carta.usado { opacity: .45; }
+  .carta.usado::after { content: '✓ no rio'; position: absolute; top: .35rem; right: .45rem; font-size: .72rem; font-weight: 800; color: var(--destaque); }
+  .carta.aberto { border-color: var(--aviso); background: #fff8e1; transform: translateY(-4px); }
+  body[data-entrada="teclado"] #btn-conectar, body[data-entrada="teclado"] #status-leitor,
+  body[data-entrada="teclado"] #btn-simulacao { display: none; }
+
+  /* ---------- Ficha de escolha (antes de colocar no rio) ---------- */
+  #escolha { position: fixed; inset: 0; z-index: 25; display: none; align-items: center; justify-content: center;
+    background: rgba(255, 255, 255, .6); backdrop-filter: blur(3px); }
+  #escolha.aberta { display: flex; }
+  .escolha-cartao { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 1.4rem; width: min(70rem, calc(100% - 2rem));
+    max-height: 92vh; overflow-y: auto; background: #fff; border: 1px solid var(--painel-borda); border-radius: 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2); padding: 1.6rem 1.8rem; animation: entra .35s cubic-bezier(.2,.9,.3,1.2); }
+  .escolha-desenho { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8rem;
+    background: linear-gradient(180deg, #d9f1f4, #a9dbe2); border-radius: 20px; padding: 1rem; }
+  .escolha-desenho canvas { width: 100%; height: auto; max-width: 440px; }
+  .escolha-desenho .foto-real img { max-height: 13rem; }
+  .escolha-info { position: relative; }
+  .escolha-info h2 { font-family: var(--fonte-titulo); font-size: 3rem; line-height: 1; margin: 0 0 .1rem; padding-right: 4rem; }
+  .escolha-tecla { position: absolute; top: 0; right: 0; background: var(--texto); color: #fff; font: 800 2.2rem var(--fonte-titulo);
+    width: 3.4rem; height: 3.4rem; line-height: 3.4rem; text-align: center; border-radius: 14px; }
+  .escolha-info dl { display: grid; grid-template-columns: auto 1fr; gap: .3rem .9rem; font-size: 1.15rem; margin: .5rem 0; }
+  .escolha-info dt { font-weight: 800; color: var(--texto-suave); }
+  .escolha-info dd { margin: 0; }
+  .escolha-info .descricao { font-size: 1.2rem; line-height: 1.35; }
+  .escolha-info .suave { color: var(--texto-suave); }
+  .escolha-ambiente { background: var(--destaque-claro); border-radius: 12px; padding: .5rem .8rem; font-size: 1.05rem; }
+  .escolha-aviso { background: #fde8e8; color: #8e2b2b; border-radius: 12px; padding: .5rem .8rem; font-weight: 800; }
+  .escolha-botoes { display: flex; gap: .7rem; margin-top: .9rem; flex-wrap: wrap; }
+  .btn.grande { font-size: 1.4rem; padding: .8rem 1.6rem; border-radius: 16px; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .escolha-dica { color: var(--texto-suave); font-weight: 700; margin: .6rem 0 0; }
+  kbd { background: var(--painel); border: 1px solid var(--painel-borda); border-bottom-width: 3px; border-radius: 6px; padding: 0 .4rem; font-family: inherit; font-weight: 800; color: var(--texto); }
+  @media (max-width: 900px) {
+    #cardapio { overflow-x: auto; }
+    .carta { min-width: 6.5rem; }
+    .escolha-cartao { grid-template-columns: 1fr; }
+    .escolha-info h2 { font-size: 2.1rem; }
+  }
 </style>
 </head>
 <body>
@@ -466,6 +518,12 @@
   </div>
 </section>
 
+<nav id="cardapio" aria-label="Peixes: aperte o número ou clique"></nav>
+
+<div id="escolha" role="dialog" aria-modal="true" aria-label="Ficha do peixe">
+  <div class="escolha-cartao" id="escolha-cartao"></div>
+</div>
+
 <section id="simulacao" aria-label="Modo simulação">
   <div class="linha" id="botoes-simulacao">
     <span class="titulo">🧪 Simulação:</span>
@@ -478,7 +536,7 @@
     <span style="margin-left:auto">Último UID lido: <span id="ultimo-uid">—</span>
       <button class="peixe" id="sim-copiar" title="Copiar UID">Copiar</button></span>
   </div>
-  <div class="atalhos">Atalhos: 1–9, 0, -, =, Q, W, E, T = peixes · U = desconhecido · ⌫ = desfazer · N = nova rodada · I = início · P = reagir ao evento · S = simulação · R = modo revisão (mostra dados a validar) · M = som · F = tela cheia</div>
+  <div class="atalhos">Jogadores: 1–0 = peixe · Enter = confirmar · Esc = voltar · Espaço = reagir ao evento. Monitor (com Shift): N = nova rodada · I = início · ⌫ = desfazer · S = simulação · R = revisão · M = som · F = tela cheia · U = UID desconhecido</div>
 </section>
 
 <div id="sobreposicao"><div class="cartao-final" id="cartao-final"></div></div>
@@ -523,7 +581,9 @@ const estado = {
   evento: null,          // { def, apos, ativo, ocorreu, reagiu, solto }
   ultimoEvento: null,
   proximoEvento: null,
-  aguardando: null       // 'sorteio' | 'revelado' | 'evento-chegando' | 'evento'
+  aguardando: null,      // 'sorteio' | 'revelado' | 'evento-chegando' | 'evento'
+  escolha: null,         // peixe com a ficha de escolha aberta (antes de confirmar)
+  interface: { entrada: 'teclado', confirmar: true }   // vem do config.json
 };
 
 const normalizarUid = (u) => String(u).toUpperCase().replace(/[^0-9A-Z-]/g, '');
@@ -544,6 +604,9 @@ async function carregarConfig() {
   }
   Regras.aplicarConfig(cfg);
   Ambientes.aplicarConfig(cfg);
+  if (cfg && cfg.interface) Object.assign(estado.interface, cfg.interface);
+  document.body.dataset.entrada = estado.interface.entrada;
+  if (!usaLeitor() && !new URLSearchParams(location.search).has('simulacao')) alternarSimulacao(false);
   cacheMelhor.clear();
 }
 
@@ -582,13 +645,15 @@ function usarEspecies(json) {
   estado.porUid.clear();
   lista.forEach((e) => {
     if (!Regras.GUILDAS[e.guilda_trofica]) console.warn('Guilda desconhecida em', e.nome_popular, e.guilda_trofica);
-    [].concat(e.uid).forEach((u) => {
+    [].concat(e.uid || []).forEach((u) => {
       const k = normalizarUid(u);
       if (estado.porUid.has(k)) console.warn('UID repetido em especies.json:', k);
       estado.porUid.set(k, e);
     });
+    if (e.tecla) estado.porUid.set('TECLA-' + e.tecla, e);   // peixe sem tag NFC também joga pelo teclado
   });
   montarBotoesSimulacao();
+  montarCardapio();
   resetarRodada();
 }
 
@@ -733,7 +798,7 @@ function melhorDaRodada(vagas = vagasPeixes()) {
   if (estado.modo === 'explorar' || !estado.especies.length) return null;
   const amb = estado.modo === 'desafio' ? estado.ambiente : null;
   const chave = (amb ? amb.id : 'livre') + '|' + vagas;
-  if (!cacheMelhor.has(chave)) cacheMelhor.set(chave, Regras.melhores(estado.especies, { ambiente: amb, vagas }, vagas, 1).top[0] || null);
+  if (!cacheMelhor.has(chave)) cacheMelhor.set(chave, Regras.melhores(especiesDoJogo(), { ambiente: amb, vagas }, vagas, 1).top[0] || null);
   return cacheMelhor.get(chave);
 }
 function metaAtual() {
@@ -774,6 +839,7 @@ function resetarRodada() {
   estado.saude = 0;
   estado.evento = null;
   estado.aguardando = null;
+  fecharEscolha();
   clearTimeout(estado.timerSorteio);
   clearTimeout(estado.timerEvento);
   clearTimeout(estado.timerChegada);
@@ -781,7 +847,7 @@ function resetarRodada() {
   $('#btn-reagir').hidden = true;
   Rio.limpar();
   Rio.definirEvento(null);
-  $('#ficha').innerHTML = `<div class="ficha-vazia"><div class="grande">Encoste um peixe no leitor</div>e veja quem ele é e como ajuda o rio!</div>`;
+  $('#ficha').innerHTML = `<div class="ficha-vazia"><div class="grande">${usaTeclado() ? 'Aperte o número de um peixe' : 'Encoste um peixe no leitor'}</div>e veja quem ele é e como ajuda o rio!</div>`;
   atualizarPainel(avaliarAgora(), null);
   atualizarCabecalho();
 }
@@ -840,7 +906,7 @@ function revelarAmbiente(amb) {
       <p class="vale"><b>Quem vive bem aqui:</b> ${esc(amb.vale)}</p>
       <p class="detalhes">Habitat: ${esc(hab)} · <b>${maxJogadas()} peixes</b> nesta rodada · Meta: <b>${metaAtual()}</b></p>
       <button class="btn" id="btn-comecar">Começar!</button>
-      <p class="detalhes">ou encostem o primeiro peixe no leitor</p>
+      <p class="detalhes">${usaTeclado() ? 'ou apertem <kbd>Enter</kbd>' : 'ou encostem o primeiro peixe no leitor'}</p>
     </div>`;
   $('#btn-comecar').addEventListener('click', comecarDesafio);
   atualizarCabecalho();
@@ -884,14 +950,14 @@ function dispararEvento() {
       <h2>${esc(ev.def.nome)}</h2>
       ${ev.solto ? `<p class="detalhes">Entrou no rio: <b>${esc(ev.solto.nome_popular)}</b></p>` : ''}
       <p>${esc(ev.def.descricao)}</p>
-      <p class="vale">${r.icone} A equipe pode <b>${esc(r.botao.toLowerCase())}</b>. Isso usa 1 das ${sobra} jogadas que faltam, no lugar de um peixe.</p>
-      <button class="btn" id="btn-evento-ok">Continuar</button>
+      <p class="vale">${r.icone} A equipe pode <b>${esc(r.botao.toLowerCase())}</b>${usaTeclado() ? ' (aperte a <kbd>barra de espaço</kbd> ou o botão verde)' : ''}. Isso usa 1 das ${sobra} jogadas que faltam, no lugar de um peixe.</p>
+      <button class="btn" id="btn-evento-ok">Continuar${usaTeclado() ? ' (Enter)' : ''}</button>
     </div>`;
   $('#sobreposicao').classList.add('aberta');
   estado.aguardando = 'evento';
   $('#btn-evento-ok').addEventListener('click', fecharEvento);
   estado.timerEvento = setTimeout(fecharEvento, 12000);
-  $('#btn-reagir').innerHTML = `${r.icone} ${esc(r.botao)} <small>(usa 1 jogada)</small>`;
+  $('#btn-reagir').innerHTML = `${r.icone} ${esc(r.botao)} <small>(usa 1 jogada${usaTeclado() ? ' · espaço' : ''})</small>`;
   $('#btn-reagir').hidden = false;
   atualizarCabecalho();
 }
@@ -905,7 +971,9 @@ function fecharEvento() {
 
 // Soltura: um exótico que ainda não está no rio entra sem gastar jogada
 function soltarExotica(ev) {
-  const opcoes = estado.especies.filter((e) => !e.nativo && !estado.comunidade.includes(e));
+  // de preferência um exótico que também está no jogo
+  const livres = (lista) => lista.filter((e) => !e.nativo && !estado.comunidade.includes(e));
+  const opcoes = livres(especiesDoJogo()).length ? livres(especiesDoJogo()) : livres(estado.especies);
   if (!opcoes.length) return;
   ev.solto = sortear(opcoes);
   estado.comunidade.push(ev.solto);
@@ -945,9 +1013,126 @@ function reagir() {
 }
 
 // ======================================================================
+// Escolha pelo teclado (1 a 0) ou mouse: abre a ficha, confirma com a mesma tecla ou Enter
+// ======================================================================
+const ORDEM_TECLAS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+const usaTeclado = () => estado.interface.entrada !== 'leitor';
+const usaLeitor = () => estado.interface.entrada !== 'teclado';
+const uidDe = (sp) => [].concat(sp.uid || [])[0] || (sp.tecla ? 'TECLA-' + sp.tecla : '');
+
+// peixes que entram no jogo: no teclado, só os que têm tecla (na ordem 1…0)
+function especiesDoJogo() {
+  if (!usaTeclado()) return estado.especies;
+  const comTecla = estado.especies.filter((e) => ORDEM_TECLAS.includes(String(e.tecla)));
+  if (!comTecla.length) return estado.especies;
+  if (estado.interface.entrada === 'ambos') return estado.especies;
+  return comTecla.sort((a, b) => ORDEM_TECLAS.indexOf(String(a.tecla)) - ORDEM_TECLAS.indexOf(String(b.tecla)));
+}
+const porTecla = (k) => estado.especies.find((e) => String(e.tecla) === k);
+
+function montarCardapio() {
+  const barra = $('#cardapio');
+  barra.replaceChildren();
+  especiesDoJogo().filter((e) => e.tecla).forEach((sp) => {
+    const b = document.createElement('button');
+    b.className = 'carta';
+    b.dataset.tecla = sp.tecla;
+    b.title = `Tecla ${sp.tecla}: ${sp.nome_popular}`;
+    b.innerHTML = `<kbd>${esc(sp.tecla)}</kbd><canvas width="180" height="80"></canvas><span>${esc(sp.nome_popular)}</span>`;
+    const g = b.querySelector('canvas').getContext('2d');
+    g.translate(90, 40);
+    Peixe.desenhar(g, sp, 120, 0);
+    b.addEventListener('click', () => tocarPeixe(uidDe(sp)));
+    barra.appendChild(b);
+  });
+  atualizarCardapio();
+}
+
+function atualizarCardapio() {
+  document.querySelectorAll('#cardapio .carta').forEach((b) => {
+    const sp = porTecla(b.dataset.tecla);
+    b.classList.toggle('usado', !!sp && estado.comunidade.includes(sp) && estado.modo !== 'explorar');
+    b.classList.toggle('aberto', !!sp && estado.escolha === sp);
+  });
+}
+
+// Abre a ficha de um peixe antes de colocar no rio
+function abrirEscolha(sp) {
+  estado.escolha = sp;
+  const hab = [].concat(sp.habitat).map((h) => Regras.HABITATS[h] || h).join(', ');
+  const guilda = Regras.GUILDAS[sp.guilda_trofica];
+  const status = String(sp.status_ameaca || 'NE').toUpperCase();
+  const jaEsta = estado.comunidade.includes(sp);
+  const cheio = rodadaCheia();
+  const amb = estado.modo === 'desafio' && estado.ambiente;
+  const tecla = sp.tecla ? `<kbd>${esc(sp.tecla)}</kbd> de novo ou ` : '';
+  $('#escolha-cartao').innerHTML = `
+    <div class="escolha-desenho"><canvas id="escolha-canvas" width="440" height="230"></canvas>
+      ${sp.foto ? `<figure class="foto-real" id="escolha-foto" hidden><img alt="Foto de ${esc(sp.nome_popular)}"><figcaption>📷 ${esc(sp.foto_credito || 'Foto do projeto')}${sp.foto_licenca ? ` · ${esc(sp.foto_licenca)}` : ''}</figcaption></figure>` : ''}
+    </div>
+    <div class="escolha-info">
+      ${sp.tecla ? `<span class="escolha-tecla">${esc(sp.tecla)}</span>` : ''}
+      <h2>${esc(sp.nome_popular)}</h2>
+      <div class="ficha-cientifico">${esc(sp.nome_cientifico)}</div>
+      <div class="selos">
+        ${sp.nativo ? '<span class="selo nativo">Nativo</span>' : '<span class="selo exotico">Exótico</span>'}
+        ${sp.endemico ? '<span class="selo endemico">Endêmico</span>' : ''}
+        ${sp.migrador ? '<span class="selo migrador">Migrador</span>' : ''}
+        <span class="selo ameaca-${status}">${STATUS_AMEACA[status] || esc(status)}</span>
+      </div>
+      <dl>
+        <dt>Come</dt><dd>${esc(sp.dieta || '')}${guilda ? ` <span class="suave">(${guilda.rotulo.toLowerCase()})</span>` : ''}</dd>
+        <dt>Vive em</dt><dd>${esc(hab)}</dd>
+        <dt>Tamanho</dt><dd>${esc({ pequeno: 'Pequeno', medio: 'Médio', grande: 'Grande' }[sp.porte] || '')}</dd>
+      </dl>
+      <p class="descricao">${esc(sp.descricao_curta)}</p>
+      ${amb ? `<p class="escolha-ambiente">Vocês estão em: <b>${amb.icone} ${esc(amb.nome)}</b>. ${esc(amb.vale)}</p>` : ''}
+      ${jaEsta ? '<p class="escolha-aviso">Esse peixe já está no rio.</p>' : cheio ? '<p class="escolha-aviso">O rio já está cheio nesta rodada.</p>' : ''}
+      <div class="escolha-botoes">
+        <button class="btn grande" id="btn-confirmar" ${jaEsta || cheio ? 'disabled' : ''}>✅ Colocar no rio</button>
+        <button class="btn sec grande" id="btn-voltar">✖ Voltar</button>
+      </div>
+      <p class="escolha-dica">${jaEsta || cheio ? 'Aperte ESC para voltar.' : `Aperte ${tecla}<kbd>Enter</kbd> para colocar no rio · <kbd>Esc</kbd> para voltar`}</p>
+    </div>`;
+  $('#escolha').classList.add('aberta');
+  $('#btn-confirmar').addEventListener('click', confirmarEscolha);
+  $('#btn-voltar').addEventListener('click', fecharEscolha);
+  const fig = $('#escolha-foto');
+  if (fig) { const img = fig.querySelector('img'); img.onload = () => { fig.hidden = false; }; img.src = sp.foto; }
+  atualizarCardapio();
+}
+
+function fecharEscolha() {
+  if (!estado.escolha) return;
+  estado.escolha = null;
+  $('#escolha').classList.remove('aberta');
+  atualizarCardapio();
+}
+
+function confirmarEscolha() {
+  const sp = estado.escolha;
+  if (!sp || estado.comunidade.includes(sp) || rodadaCheia()) return;
+  fecharEscolha();
+  tocarPeixe(uidDe(sp), { confirmado: true });
+}
+
+// peixe da ficha aberta nadando
+(function animarEscolha(t) {
+  const c = $('#escolha-canvas');
+  if (c && estado.escolha) {
+    const g = c.getContext('2d');
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, c.width, c.height);
+    g.translate(c.width / 2, c.height / 2);
+    Peixe.desenhar(g, estado.escolha, 340, t / 1000);
+  }
+  requestAnimationFrame(animarEscolha);
+})(0);
+
+// ======================================================================
 // Lógica de jogada
 // ======================================================================
-function tocarPeixe(uidBruto) {
+function tocarPeixe(uidBruto, { confirmado = false } = {}) {
   const uid = normalizarUid(uidBruto);
   $('#ultimo-uid').textContent = uid;
   if (!estado.modo) return;                                     // tela inicial
@@ -967,6 +1152,14 @@ function tocarPeixe(uidBruto) {
     console.info('UID desconhecido:', uid, '(copie para especies.json)');
     return;
   }
+
+  // ficha antes de colocar: o mesmo peixe de novo confirma, outro peixe troca a ficha
+  if (estado.modo !== 'explorar' && estado.interface.confirmar && !confirmado) {
+    if (estado.escolha === sp) confirmarEscolha();
+    else abrirEscolha(sp);
+    return;
+  }
+  fecharEscolha();
 
   // Conheça os peixes: sem pontos nem vez; repetir só mostra a ficha de novo
   if (estado.modo === 'explorar') {
@@ -1069,6 +1262,7 @@ function atualizarCabecalho() {
   if (amb) $('#chip-ambiente').textContent = `${amb.icone} ${amb.nomeCurto || amb.nome}` + (estado.evento && estado.evento.ativo ? ' ' + estado.evento.def.icone : '');
   $('#titulo-jogo').textContent = estado.modo ? MODOS[estado.modo].nome : 'Monte a comunidade de peixes';
   $('#btn-nova').textContent = estado.modo === 'explorar' ? 'Limpar rio' : 'Nova rodada';
+  atualizarCardapio();
   document.querySelectorAll('#botoes-simulacao button.peixe').forEach((b) => {
     b.classList.toggle('usado', estado.comunidade.includes(estado.especies[+b.dataset.i]));
   });
@@ -1723,7 +1917,7 @@ function mostrarFimDeRodada() {
           `<span>${esc(c.rotulo)}</span><span class="mini"><i style="width:${Math.round(c.nota * 100)}%"></i></span><b>${Math.round(c.nota * 100)}</b>`).join('')}</div>
       </details>
       <div class="botoes-final">
-        <button class="btn" id="btn-final-nova">${amb ? 'Sortear outro ambiente' : 'Nova rodada'}</button>
+        <button class="btn" id="btn-final-nova">${amb ? 'Sortear outro ambiente' : 'Nova rodada'}${usaTeclado() ? ' (Enter)' : ''}</button>
         <button class="btn sec" id="btn-final-inicio">🏠 Início</button>
       </div>
     </div>`;
@@ -1762,8 +1956,6 @@ const Som = (() => {
 // ======================================================================
 // Simulação e atalhos
 // ======================================================================
-const TECLAS_PEIXES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'q', 'w', 'e', 't'];
-
 function montarBotoesSimulacao() {
   const caixa = $('#botoes-simulacao');
   caixa.querySelectorAll('button').forEach((b) => b.remove());
@@ -1771,10 +1963,10 @@ function montarBotoesSimulacao() {
     const b = document.createElement('button');
     b.className = 'peixe';
     b.dataset.i = i;
-    const tecla = TECLAS_PEIXES[i] || '';
+    const tecla = sp.tecla || '';
     b.innerHTML = (tecla ? `<kbd>${tecla}</kbd>` : '') + esc(sp.nome_popular);
     if (!sp.nativo) b.classList.add('exotica');
-    b.addEventListener('click', () => tocarPeixe([].concat(sp.uid)[0]));
+    b.addEventListener('click', () => tocarPeixe(uidDe(sp), { confirmado: true }));
     caixa.appendChild(b);
   });
 }
@@ -1808,24 +2000,42 @@ function telaCheia() {
   else document.documentElement.requestFullscreen?.().catch(() => {});
 }
 
+// Teclado: as crianças usam só os números, Enter, Esc e espaço.
+// Os atalhos do monitor pedem Shift, para ninguém reiniciar o jogo sem querer.
 addEventListener('keydown', (e) => {
-  if (e.ctrlKey || e.metaKey || e.altKey || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  const k = e.key.toLowerCase();
-  const sim = document.body.classList.contains('modo-simulacao');
-  if (!estado.modo && ['1', '2', '3'].includes(k)) iniciarModo(['livre', 'desafio', 'explorar'][+k - 1]);
-  else if (sim && TECLAS_PEIXES.includes(k)) {
-    const sp = estado.especies[TECLAS_PEIXES.indexOf(k)];
-    if (sp) tocarPeixe([].concat(sp.uid)[0]);
-  } else if (sim && k === 'u') tocarPeixe('04DEADBEEF00');
-  else if (sim && k === 'backspace') desfazer();
-  else if (k === 's') alternarSimulacao();
-  else if (k === 'n') novaRodada();
-  else if (k === 'i') mostrarInicio();
-  else if (k === 'p') reagir();
-  else if (k === 'r') { document.body.classList.toggle('modo-revisao'); avisar(document.body.classList.contains('modo-revisao') ? 'Modo revisão: dados a validar visíveis' : 'Modo revisão desligado', 'info'); }
-  else if (k === 'm') { estado.som = !estado.som; avisar(estado.som ? 'Som ligado' : 'Som desligado', 'info'); }
-  else if (k === 'f') telaCheia();
-  else return;
+  if (e.ctrlKey || e.metaKey || e.altKey || ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  const codigo = e.code || '';
+  if (e.shiftKey) {
+    const atalho = { KeyN: novaRodada, KeyI: mostrarInicio, KeyS: () => alternarSimulacao(), KeyF: telaCheia, KeyP: reagir,
+      Backspace: desfazer, KeyU: () => tocarPeixe('04DEADBEEF00'),
+      KeyR: () => { document.body.classList.toggle('modo-revisao'); avisar(document.body.classList.contains('modo-revisao') ? 'Modo revisão: dados a validar visíveis' : 'Modo revisão desligado', 'info'); },
+      KeyM: () => { estado.som = !estado.som; avisar(estado.som ? 'Som ligado' : 'Som desligado', 'info'); } }[codigo || k];
+    if (!atalho) return;
+    atalho();
+    e.preventDefault();
+    return;
+  }
+  // número do peixe: pela tecla de cima ou pelo teclado numérico
+  const num = /^Digit\d$/.test(codigo) ? codigo.slice(5) : /^Numpad\d$/.test(codigo) ? codigo.slice(6) : (/^\d$/.test(k) ? k : null);
+  if (!estado.modo) {
+    if (['1', '2', '3'].includes(num)) iniciarModo(['livre', 'desafio', 'explorar'][+num - 1]);
+    else return;
+  } else if (k === 'Escape') {
+    fecharEscolha();
+  } else if (k === 'Enter') {
+    if (estado.escolha) confirmarEscolha();
+    else if (estado.aguardando === 'revelado') comecarDesafio();
+    else if (estado.aguardando === 'evento') fecharEvento();
+    else if (estado.rodadaEncerrada && $('#sobreposicao').classList.contains('aberta')) novaRodada();
+    else return;
+  } else if (k === ' ') {
+    reagir();
+  } else if (num !== null && usaTeclado()) {
+    const sp = porTecla(num);
+    if (!sp) return;
+    tocarPeixe(uidDe(sp));
+  } else return;
   e.preventDefault();
 });
 

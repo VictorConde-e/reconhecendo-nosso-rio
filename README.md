@@ -49,6 +49,17 @@ Quem sofre com cada evento vem do campo `sofre_com` de `especies.json`. Enquanto
 
 Com o leitor, encostar um peixe também fecha o cartão do ambiente sorteado e o do evento. Dá para jogar sem mouse.
 
+## Jogar com teclado e mouse (sem o leitor)
+
+Com `interface.entrada = "teclado"` no `config.json` (o padrão), não precisa do leitor NFC:
+- **1 a 9 e 0:** cada tecla é um peixe. A tecla de cada espécie é escolhida no painel admin, no campo **Tecla no jogo**. Só os peixes com tecla entram no jogo e no cálculo da receita do 100.
+- **Barra de cartões embaixo da tela:** dá para clicar no peixe com o mouse.
+- **Ficha antes de confirmar:** apertar a tecla abre a ficha do peixe. **A mesma tecla de novo ou Enter** coloca no rio, e **Esc** volta. A ficha mostra os fatos (o que come, onde vive, se é nativo), mas não diz se o peixe combina com o ambiente: a escolha é das crianças.
+- **Espaço:** reage ao evento (replantar, tratar o esgoto…). **Enter** fecha os cartões e começa uma nova rodada no fim.
+- **Atalhos do monitor pedem Shift**, para as crianças não apertarem sem querer: Shift+N nova rodada, Shift+I início, Shift+⌫ desfazer, Shift+S simulação, Shift+R revisão, Shift+M som, Shift+F tela cheia.
+
+No painel admin (aba **⚙️ Regras e pontuação → Como jogar**) dá para trocar para o **leitor NFC** ou **os dois**, e ligar ou desligar a ficha antes de confirmar.
+
 ## 1. Rodar sem hardware (modo simulação)
 
 1. Abra `web/index.html` no Chrome ou no Edge.

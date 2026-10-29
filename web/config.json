@@ -3,7 +3,8 @@
     "Configuração do jogo. Edite pelo painel admin (aba 'Regras e pontuação') ou à mão.",
     "Os valores aqui substituem os padrões de regras.js e ambientes.js. Apagar uma linha volta ao padrão.",
     "regras.notaRelativa = true: 100 pontos = o melhor rio possível com as espécies e o ambiente da rodada (sempre dá para fazer 100).",
-    "ambientes.<id>.peixes: quantos peixes a rodada tem naquele ambiente; ambientes.<id>.meta: meta própria (vazio = metaSaude)."
+    "ambientes.<id>.peixes: quantos peixes a rodada tem naquele ambiente; ambientes.<id>.meta: meta própria (vazio = metaSaude).",
+    "interface.entrada: 'teclado' (teclas 1 a 0 e cliques), 'leitor' (NFC) ou 'ambos'. interface.confirmar: abre a ficha do peixe antes de colocar no rio (aperte a tecla de novo ou Enter)."
   ],
   "regras": {
     "metaSaude": 70,
@@ -51,5 +52,9 @@
   },
   "eventos": {
     "chanceEvento": 0.7
+  },
+  "interface": {
+    "entrada": "teclado",
+    "confirmar": true
   }
 }

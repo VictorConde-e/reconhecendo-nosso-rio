@@ -57,6 +57,8 @@
   .tag.exo { background: var(--erro-claro); color: #8e2b2b; }
   .tag.val { background: var(--aviso-claro); color: #6b5200; }
   .tag.err { background: var(--erro); color: #fff; }
+  .tag.tec { background: var(--texto); color: #fff; min-width: 1.3rem; text-align: center; }
+  .tag.fora { background: var(--painel); color: var(--suave); border: 1px solid var(--borda); }
   .lista-rodape { padding: .6rem .7rem; border-top: 1px solid var(--borda); display: flex; gap: .4rem; flex-wrap: wrap; }
 
   #editor { overflow-y: auto; padding: 1rem 1.4rem 4rem; }
@@ -114,6 +116,7 @@
   .regras-topo { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
   .regras-topo .nota { flex: 1; margin: 0; }
   .aba-cheia input[type=number] { padding: .45rem .6rem; border: 1px solid var(--borda); border-radius: 9px; background: #fff; }
+  .teste-grade > .nota { grid-column: 1 / -1; margin: 0; }
   .teste-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 1rem; }
   .teste-card { border: 1px solid var(--borda); border-left: 6px solid var(--ok); border-radius: 14px; padding: .7rem 1rem .9rem; }
   .teste-card.atencao { border-left-color: var(--aviso); }
@@ -220,7 +223,7 @@ const FORMAS = Peixe.FORMAS;
 const COLUNAS = { superficie: 'Superfície', meio: 'Meio', fundo: 'Fundo' };
 const PORTES = { pequeno: 'Pequeno', medio: 'Médio', grande: 'Grande' };
 // ordem dos campos no arquivo (campos desconhecidos são mantidos no fim)
-const ORDEM = ['uid', 'nome_popular', 'nome_cientifico', 'guilda_trofica', 'dieta', 'habitat', 'ambientes', 'sofre_com',
+const ORDEM = ['uid', 'tecla', 'nome_popular', 'nome_cientifico', 'guilda_trofica', 'dieta', 'habitat', 'ambientes', 'sofre_com',
   'migrador', 'status_ameaca', 'nativo', 'endemico', 'tentador', 'por_que_tenta', 'porte', 'come', 'descricao_curta',
   'imagem', 'foto', 'foto_busca', 'foto_arquivo', 'foto_credito', 'foto_licenca', 'foto_fonte', 'validar', 'notas_validacao', 'visual'];
 
@@ -243,7 +246,8 @@ function configPadrao() {
     _leia_me: ['Configuração do jogo, editada pelo painel admin (aba "Regras e pontuação").'],
     regras: Object.fromEntries(CAMPOS_REGRAS.map((k) => [k, JSON.parse(JSON.stringify(PADRAO_REGRAS[k]))])),
     ambientes: Object.fromEntries(Ambientes.lista.map((a) => [a.id, { peixes: null, meta: null }])),
-    eventos: { chanceEvento: PADRAO_EV.chanceEvento }
+    eventos: { chanceEvento: PADRAO_EV.chanceEvento },
+    interface: { entrada: 'teclado', confirmar: true }
   };
 }
 
@@ -290,7 +294,8 @@ function usarConfig(cfg) {
               pesos: { ...base.regras.pesos, ...((cfg.regras || {}).pesos || {}) },
               pesosDesafio: { ...base.regras.pesosDesafio, ...((cfg.regras || {}).pesosDesafio || {}) } },
     ambientes: Object.fromEntries(Object.keys(base.ambientes).map((id) => [id, { ...base.ambientes[id], ...((cfg.ambientes || {})[id] || {}) }])),
-    eventos: { ...base.eventos, ...(cfg.eventos || {}) }
+    eventos: { ...base.eventos, ...(cfg.eventos || {}) },
+    interface: { ...base.interface, ...(cfg.interface || {}) }
   };
   estado.configOriginal = serializarConfig();
   aplicarConfigRascunho();
@@ -485,6 +490,11 @@ async function mensagemErro(r) {
 // Aba "Regras e pontuação"
 // ======================================================================
 const CAMPOS_FORM = [
+  { titulo: 'Como jogar', campos: [
+    ['interface.entrada', 'Escolha dos peixes', 'Teclado: teclas 1 a 0 e clique nos cartões. Leitor: peixes com NFC.', 'select',
+      { teclado: 'Teclado e mouse', leitor: 'Leitor NFC', ambos: 'Teclado e leitor NFC' }],
+    ['interface.confirmar', 'Mostrar a ficha antes de colocar no rio', 'A criança lê sobre o peixe e confirma apertando a mesma tecla de novo ou Enter.', 'bool']
+  ] },
   { titulo: 'Rodada e meta', campos: [
     ['regras.metaSaude', 'Meta de saúde', 'Nota para a equipe "vencer" (0 a 100).'],
     ['regras.maxPeixesPorRodada', 'Peixes por rodada', 'Padrão para os modos e ambientes sem valor próprio.'],
@@ -526,8 +536,10 @@ function renderRegras() {
       <p class="nota">Estas regras ficam no <code>config.json</code>. Salve com <b>☁ Salvar no GitHub</b> ou <b>⬇ Baixar</b>, e confira o resultado na aba <b>🏆 Teste dos 100 pontos</b>. Campo vazio = valor padrão.</p>
       <button class="btn sec" id="btn-padrao-regras">↺ Voltar tudo ao padrão</button>
     </div>
-    ${CAMPOS_FORM.map((g) => `<fieldset><legend>${esc(g.titulo)}</legend><div class="grade">${g.campos.map(([cfg, rot, dica, tipo]) => tipo === 'bool'
+    ${CAMPOS_FORM.map((g) => `<fieldset><legend>${esc(g.titulo)}</legend><div class="grade">${g.campos.map(([cfg, rot, dica, tipo, opcoes]) => tipo === 'bool'
       ? `<label class="bool largo"><input type="checkbox" data-cfg="${cfg}" data-tipo="bool"> <b>${esc(rot)}</b> <small>${esc(dica)}</small></label>`
+      : tipo === 'select'
+      ? `<label class="campo"><span>${esc(rot)}</span><select data-cfg="${cfg}" data-tipo="select">${Object.entries(opcoes).map(([v, r]) => `<option value="${esc(v)}">${esc(r)}</option>`).join('')}</select><small>${esc(dica)}</small></label>`
       : `<label class="campo"><span>${esc(rot)}</span><input type="number" step="${tipo === 'dec' ? '0.01' : '1'}" min="0" data-cfg="${cfg}" data-tipo="${tipo || 'num'}">${dica ? `<small>${esc(dica)}</small>` : ''}</label>`).join('')}</div></fieldset>`).join('')}
     <fieldset><legend>Ambientes do Desafio</legend><div class="grade">${amb}</div>
       <small>Peixes: quantos peixes a rodada tem naquele ambiente. Use menos peixes onde poucos nativos vivem bem.</small></fieldset>`;
@@ -538,13 +550,14 @@ function renderRegras() {
     if (el.dataset.tipo === 'bool') el.checked = !!v;
     else if (el.dataset.tipo === 'pct') el.value = v == null ? '' : Math.round(v * 100);
     else el.value = v == null ? '' : v;
-    el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', () => {
+    el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', () => {
       const partes = el.dataset.cfg.split('.');
       let o = estado.config;
       partes.slice(0, -1).forEach((k) => { o[k] = o[k] || {}; o = o[k]; });
       const k = partes[partes.length - 1];
       let valor;
       if (el.dataset.tipo === 'bool') valor = el.checked;
+      else if (el.dataset.tipo === 'select') valor = el.value;
       else if (el.value === '') valor = null;
       else valor = el.dataset.tipo === 'pct' ? Number(el.value) / 100 : Number(el.value);
       // nas regras, vazio volta ao padrão de regras.js
@@ -569,12 +582,16 @@ const pausa = () => new Promise((r) => setTimeout(r, 0));
 
 async function rodarTeste() {
   const area = $('#teste-resultados');
-  const especies = estado.dados.especies.filter((e) => uidsDe(e).length && Regras.GUILDAS[e.guilda_trofica]);
+  const entrada = (estado.config.interface || {}).entrada || 'teclado';
+  const comTecla = estado.dados.especies.filter((e) => e.tecla);
+  const especies = (entrada === 'teclado' && comTecla.length ? comTecla : estado.dados.especies)
+    .filter((e) => (uidsDe(e).length || e.tecla) && Regras.GUILDAS[e.guilda_trofica]);
   const meta = Regras.CONFIG.metaSaude;
   const relativa = Regras.CONFIG.notaRelativa;
   const cenarios = [{ nome: 'Monte a comunidade', icone: '🐟', ambiente: null }]
     .concat(Ambientes.lista.map((a) => ({ nome: a.nome, icone: a.icone, ambiente: a })));
   area.innerHTML = '<p class="nota">Calculando… (testa todas as combinações de peixes)</p>';
+  const aviso10 = entrada === 'teclado' ? `<p class="nota">Usando os ${especies.length} peixes com tecla (${especies.map((e) => `${e.tecla} ${e.nome_popular}`).join(' · ')}).</p>` : '';
   estado.testeDesatualizado = false;
   const cartoes = [];
   for (const c of cenarios) {
@@ -636,7 +653,7 @@ async function rodarTeste() {
     </div>`);
     area.innerHTML = cartoes.join('') + '<p class="nota">Calculando os próximos…</p>';
   }
-  area.innerHTML = cartoes.join('');
+  area.innerHTML = aviso10 + cartoes.join('');
 }
 
 // ======================================================================
@@ -663,7 +680,8 @@ function problemas(e, i) {
   const outras = estado.dados.especies.filter((_, j) => j !== i);
   const erro = (t) => lista.push({ tipo: 'erro', texto: t });
   const aviso = (t) => lista.push({ tipo: 'aviso', texto: t });
-  if (!uidsDe(e).length) erro('Sem UID: o jogo não vai reconhecer este peixe.');
+  if (!uidsDe(e).length && !e.tecla) erro('Sem UID e sem tecla: o jogo não vai reconhecer este peixe.');
+  if (e.tecla) { const d = outras.find((o) => String(o.tecla) === String(e.tecla)); if (d) erro(`Tecla ${e.tecla} repetida: também está em ${d.nome_popular}.`); }
   uidsDe(e).forEach((u) => { const d = outras.find((o) => uidsDe(o).includes(u)); if (d) erro(`UID ${u} repetido: também está em ${d.nome_popular}.`); });
   if (!e.nome_popular) erro('Falta o nome popular.');
   if (!e.nome_cientifico) erro('Falta o nome científico (ele também identifica o peixe na teia).');
@@ -706,7 +724,8 @@ function renderLista() {
     li.appendChild(txt);
     const m = document.createElement('div');
     m.className = 'marcas';
-    m.innerHTML = (ps.some((p) => p.tipo === 'erro') ? '<span class="tag err">erro</span>' : '') +
+    m.innerHTML = (e.tecla ? `<span class="tag tec" title="Tecla no jogo">${esc(e.tecla)}</span>` : '<span class="tag fora" title="Fora do jogo no modo teclado">—</span>') +
+                  (ps.some((p) => p.tipo === 'erro') ? '<span class="tag err">erro</span>' : '') +
                   (!e.nativo ? '<span class="tag exo">exótico</span>' : '') +
                   (e.validar ? '<span class="tag val" title="Dado a validar">validar</span>' : '');
     li.appendChild(m);
@@ -745,6 +764,8 @@ function formulario() {
   <fieldset><legend>Identificação</legend><div class="grade">
     <label class="campo"><span>Nome popular</span><input type="text" data-campo="nome_popular"></label>
     <label class="campo"><span>Nome científico</span><input type="text" data-campo="nome_cientifico"></label>
+    <label class="campo"><span>Tecla no jogo</span>${select('tecla', Object.fromEntries(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((t) => [t, `Tecla ${t}`])), 'Fora do jogo (sem tecla)')}
+      <small>No modo teclado, só os peixes com tecla aparecem no jogo (até 10).</small></label>
     <label class="campo largo"><span>UID da tag NFC</span>
       <div class="linha-uid"><input type="text" data-campo="uid" data-tipo="lista" placeholder="04A1B2C3D4E5F6, SIM-01">
       <button class="btn sec" id="btn-ler-uid" type="button" title="Conecte o leitor e encoste o peixe">📡 Ler do leitor</button></div>

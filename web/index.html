@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Monte a comunidade de peixes</title>
+<script>
+  // Aberto sem a barra no fim (ex.: site.com/jogo), os arquivos relativos (regras.js, especies.json…)
+  // seriam procurados na pasta de cima. A base corrige isso antes de qualquer arquivo carregar.
+  if (!/\/$|\.html?$/.test(location.pathname)) document.write('<base href="' + location.pathname + '/">');
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
